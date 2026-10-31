@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+@layer base {
+  html, body {
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: auto;
+  }
+  body {
+    min-height: 100vh;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #120e0c;
+    color: #faf8f5;
+  }
+}
+
+/* Custom subtle scrollbar in Claude terracotta */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #181310;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(217, 107, 39, 0.45);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(234, 88, 12, 0.75);
+}

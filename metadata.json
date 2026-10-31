@@ -1,0 +1,6 @@
+{
+  "name": "AI Celebration & Event Management",
+  "description": "AI Celebration and Event Management platform with crafted Claude orange aesthetics, fluid animations, and Gemini integrations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

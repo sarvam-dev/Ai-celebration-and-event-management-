@@ -26,7 +26,8 @@ export type SwipeScreenId =
   | 'guests'
   | 'budget'
   | 'staff'
-  | 'controls';
+  | 'controls'
+  | 'aichat';
 
 export interface SwipeScreenInfo {
   id: SwipeScreenId;
@@ -129,8 +130,39 @@ export const SWIPE_SCREENS: SwipeScreenInfo[] = [
       'Share Event Link & Passcode Generator',
       'Legal Terms, Privacy & Sign Out'
     ]
+  },
+  {
+    id: 'aichat',
+    screenNumber: 7,
+    shortTitle: 'AI Chatbot',
+    title: 'Screen 7: Multi-Day AI Event Concierge',
+    tagline: 'Timeline Intelligence, Schedule Querying & Day-by-Day Answers',
+    purpose: 'Real-time conversational intelligence across all event days, runs of show, speaker timings, vendor load-ins, dietary routing, and crisis mitigations.',
+    themeAccent: 'orange',
+    features: [
+      'Multi-Day Timeline Matrix (Day -1 to Day 3)',
+      'Natural Language Day-by-Day Q&A (Gemini 3.8 Flash)',
+      'Real-Time Schedule & Conflict Verification',
+      'Quick-Prompt Day Navigator & Run of Show Answers'
+    ]
   }
 ];
+
+export interface ChatMessage {
+  id: string;
+  sender: 'user' | 'assistant';
+  text: string;
+  timestamp: string;
+  dayTag?: string;
+  modelSource?: string;
+}
+
+export interface MultiDaySchedule {
+  dayMinus1: string; // T-1 Setup & Rigging
+  day1: string;      // Day 1 Welcome & Gala
+  day2: string;      // Day 2 Core Celebration & Band
+  day3: string;      // Day 3 Farewell & Teardown
+}
 
 export interface EventSetupData {
   eventName: string;
@@ -144,13 +176,21 @@ export interface EventSetupData {
   honoreeOrHost: string;
   themeStyle: string;
   budgetTier: 'Intimate Boutique' | 'Grand Celebration' | 'Enterprise Ultra';
+  multiDaySchedule?: MultiDaySchedule;
   enabledModules: {
-    runOfShowClock: boolean;
-    multiTrackAgenda: boolean;
-    vipGateRadar: boolean;
-    avLightingMatrix: boolean;
-    crowdFlowHeatmap: boolean;
-    emergencyDispatch: boolean;
+    dashboardChecklist?: boolean;
+    venueDiscovery?: boolean;
+    guestRegistry?: boolean;
+    budgetLedger?: boolean;
+    staffOps?: boolean;
+    eventControls?: boolean;
+    // Legacy compatibility keys
+    runOfShowClock?: boolean;
+    multiTrackAgenda?: boolean;
+    vipGateRadar?: boolean;
+    avLightingMatrix?: boolean;
+    crowdFlowHeatmap?: boolean;
+    emergencyDispatch?: boolean;
   };
 }
 
@@ -182,5 +222,68 @@ export interface ProblemScenario {
     | 'redeploy_staff'
     | 'contingency_venue'
     | 'protocol_shutdown';
+  isAiGenerated?: boolean;
+  aiModel?: string;
+  metricComparison?: {
+    beforeLabel: string;
+    beforeValue: string;
+    afterLabel: string;
+    afterValue: string;
+  };
 }
 
+export interface VenueOption {
+  id: string;
+  name: string;
+  area: string;
+  capacity: number;
+  estimatedRent: number;
+  rating: number;
+  amenities: string[];
+  whyItFits: string;
+  indoorOutdoor?: string;
+  sourceUrl?: string;
+  image?: string;
+  isAiSuggested?: boolean;
+}
+
+export interface ExpenseRecord {
+  id: string;
+  name: string;
+  category: string;
+  amount: number;
+  status: 'Paid' | 'Pending';
+}
+
+export interface GuestRecord {
+  id: string;
+  name: string;
+  rsvp: 'Attending' | 'Pending' | 'Declined';
+  tier: string;
+  table: string;
+  diet: string;
+  checkedIn: boolean;
+  phone: string;
+}
+
+export interface StaffRecord {
+  id: string;
+  name: string;
+  role: string;
+  dept: string;
+  shift: string;
+  status: 'On Duty' | 'On Break' | 'Scheduled';
+  channel: string;
+  phone: string;
+}
+
+export interface SelfCheckResult {
+  id: string;
+  name: string;
+  category: string;
+  status: 'PASS' | 'FAIL' | 'RUNNING';
+  description: string;
+  expected: string;
+  actual: string;
+  details?: string;
+}

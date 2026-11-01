@@ -47,16 +47,19 @@ import {
   Activity
 } from 'lucide-react';
 import { ScreenAISolverWidget } from './ScreenAISolverWidget';
-import { EventSetupData, SWIPE_SCREENS, ProblemScenario } from '../types';
+import { AiChatbotScreen } from './AiChatbotScreen';
+import { EventSetupData, SWIPE_SCREENS, ProblemScenario, AuthUser } from '../types';
 
 interface SwipeScreenCardProps {
   screenIndex: number;
   eventData?: EventSetupData;
+  currentUser?: AuthUser | null;
   onJumpToScreen?: (idx: number) => void;
   onEditSetup?: () => void;
   onLogOut?: () => void;
   onEndEvent?: () => void;
   onUpdateEventData?: (data: Partial<EventSetupData>) => void;
+  onResetDemoData?: () => void;
   scenarios?: ProblemScenario[];
   onResolveScenario?: (id: string) => void;
   onOpenAIProblemSolver?: () => void;
@@ -65,11 +68,13 @@ interface SwipeScreenCardProps {
 export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
   screenIndex,
   eventData,
+  currentUser,
   onJumpToScreen,
   onEditSetup,
   onLogOut,
   onEndEvent,
   onUpdateEventData,
+  onResetDemoData,
   scenarios = [],
   onResolveScenario,
   onOpenAIProblemSolver,
@@ -90,12 +95,12 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
     themeStyle: 'Claude Terracotta & Royal Gold',
     budgetTier: 'Grand Celebration',
     enabledModules: {
-      runOfShowClock: true,
-      multiTrackAgenda: true,
-      vipGateRadar: true,
-      avLightingMatrix: true,
-      crowdFlowHeatmap: true,
-      emergencyDispatch: true,
+      dashboardChecklist: true,
+      venueDiscovery: true,
+      guestRegistry: true,
+      budgetLedger: true,
+      staffOps: true,
+      eventControls: true,
     },
   };
 
@@ -171,6 +176,7 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
   const [searchGuestsQuery, setSearchGuestsQuery] = useState(guestCountNum.toString());
   const [selectedVenueId, setSelectedVenueId] = useState<string>('v1');
   const [venueNotification, setVenueNotification] = useState<string | null>(null);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   // Venues curated/web-matched dynamically to location and guests
   const initialVenues = [
@@ -186,7 +192,6 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
       image: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80',
       badge: 'Best Match for ' + currentEvent.eventType,
       highlights: ['Chandelier Ballrooms', 'Terracotta Ambient Uplighting', 'Full Commercial Kitchen', 'VIP Valet'],
-      budgetFit: 'Optimal (28% of budget)',
     },
     {
       id: 'v2',
@@ -200,13 +205,13 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
       image: 'https://images.unsplash.com/photo-1545232979-fbf68fe9b1af?auto=format&fit=crop&w=800&q=80',
       badge: 'Panoramic City Views',
       highlights: ['360° Glass Atrium', 'Concert-Grade Acoustic Baffles', 'Helipad Access', 'Sunset Terrace'],
-      budgetFit: 'Premium (32% of budget)',
     },
     {
       id: 'v3',
       name: 'Solstice Botanical Gardens & Orangerie',
       location: `${venueLocation} • Riverside Arboretum`,
-      capacity: Math.max(guestCountNum - 20, 400),
+      // Intentionally below guest count to demonstrate capacity validation (Bug 2)
+      capacity: Math.min(guestCountNum - 50, 320),
       rating: 4.92,
       reviewsCount: 176,
       pricePerDay: Math.round(totalBudgetNum * 0.24),
@@ -214,7 +219,6 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
       image: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=800&q=80',
       badge: 'Lush Botanical Atmosphere',
       highlights: ['Exotic Flora Canopy', 'Natural Skylighting', 'Water Fountains', 'Outdoor Fairy Lights'],
-      budgetFit: 'Value (24% of budget)',
     },
     {
       id: 'v4',
@@ -228,7 +232,6 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
       image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=800&q=80',
       badge: 'Modern Architectural Chic',
       highlights: ['Exposed Brick & Ironwork', '4K Projection Matrix', 'Craft Cocktail Island', 'Soundproof Breakouts'],
-      budgetFit: 'High Efficiency (22% of budget)',
     },
   ];
 
@@ -239,14 +242,47 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
     setVenueNotification(null);
     setTimeout(() => {
       setIsSearchingVenues(false);
-      setVenueNotification(`Web search completed: 4 verified venues found in ${searchLocationQuery} accommodating ${searchGuestsQuery} guests.`);
-    }, 1200);
+      setVenueNotification(`Web search completed: 4 verified venues found in ${searchLocationQuery} for ${searchGuestsQuery} guests.`);
+    }, 1000);
   };
 
   const handleSelectVenue = (venue: typeof initialVenues[0]) => {
+    if (venue.capacity < guestCountNum) {
+      setVenueNotification(`Selection blocked: "${venue.name}" has maximum capacity of ${venue.capacity}, which is below required ${guestCountNum} guests.`);
+      return;
+    }
     setSelectedVenueId(venue.id);
     onUpdateEventData?.({ venueName: venue.name, venueCity: searchLocationQuery });
-    setVenueNotification(`"${venue.name}" selected as your official event venue!`);
+
+    // Update budget's Venue Rental line in central state (Bug 2)
+    setExpenses((prev) => {
+      const existingIdx = prev.findIndex((e) => e.category === 'Venue Rental & Staging');
+      if (existingIdx !== -1) {
+        return prev.map((e, idx) =>
+          idx === existingIdx
+            ? {
+                ...e,
+                name: `${venue.name} Contract`,
+                amount: venue.pricePerDay,
+                status: 'Paid',
+              }
+            : e
+        );
+      } else {
+        return [
+          {
+            id: `e-venue-${Date.now()}`,
+            name: `${venue.name} Contract`,
+            category: 'Venue Rental & Staging',
+            amount: venue.pricePerDay,
+            status: 'Paid',
+          },
+          ...prev,
+        ];
+      }
+    });
+
+    setVenueNotification(`"${venue.name}" selected as primary venue! Budget Venue Rental line updated to $${venue.pricePerDay.toLocaleString()}.`);
   };
 
   // =========================================================================
@@ -260,7 +296,7 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
   const [newGuestDiet, setNewGuestDiet] = useState('Standard');
   const [newGuestTier, setNewGuestTier] = useState<'VIP' | 'Regular' | 'Honoree Family'>('VIP');
 
-  const [guests, setGuests] = useState([
+  const initialGuests = [
     { id: '1', name: 'Lady Genevieve Sterling', rsvp: 'Attending', tier: 'VIP Gold', table: 'Table 01 - Diamond', diet: 'Gluten-Free', checkedIn: true, phone: '+1 (555) 234-8901' },
     { id: '2', name: 'Dr. Marcus Vance & Guest', rsvp: 'Attending', tier: 'Honoree Family', table: 'Table 01 - Diamond', diet: 'Standard', checkedIn: true, phone: '+1 (555) 789-1234' },
     { id: '3', name: 'Ambassador Tariq Al-Mansoor', rsvp: 'Attending', tier: 'Dignitary', table: 'Table 02 - Emerald', diet: 'Halal', checkedIn: false, phone: '+1 (555) 456-7890' },
@@ -269,7 +305,9 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
     { id: '6', name: 'Cassandra Blake & Party of 4', rsvp: 'Attending', tier: 'VIP Platinum', table: 'Table 05 - Amber', diet: 'Vegetarian', checkedIn: true, phone: '+1 (555) 890-4321' },
     { id: '7', name: 'Arthur Pendelton', rsvp: 'Declined', tier: 'Regular', table: 'Unassigned', diet: 'None', checkedIn: false, phone: '+1 (555) 901-2345' },
     { id: '8', name: 'Sophia & Liam Dubois', rsvp: 'Pending', tier: 'Honoree Family', table: 'Table 02 - Emerald', diet: 'Nut Allergy', checkedIn: false, phone: '+1 (555) 678-3456' },
-  ]);
+  ];
+
+  const [guests, setGuests] = useState(initialGuests);
 
   const handleAddGuest = (e: React.FormEvent) => {
     e.preventDefault();
@@ -291,10 +329,15 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
     setShowAddGuestModal(false);
   };
 
+  // Derive all guest metrics from real lists and setup target (Bug 3)
+  const totalInvitedGuests = guestCountNum;
   const attendingCount = guests.filter((g) => g.rsvp === 'Attending').length;
   const pendingCount = guests.filter((g) => g.rsvp === 'Pending').length;
   const declinedCount = guests.filter((g) => g.rsvp === 'Declined').length;
   const checkedInCount = guests.filter((g) => g.checkedIn).length;
+  const confirmationPctOfInvited = totalInvitedGuests > 0 
+    ? ((attendingCount / totalInvitedGuests) * 100).toFixed(1) 
+    : '0';
 
   const toggleCheckIn = (id: string) => {
     setGuests((prev) =>
@@ -302,40 +345,69 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
     );
   };
 
+  // Turnstile math configuration & gates (Bug 5)
+  const [activeGates, setActiveGates] = useState<number>(1);
+  const secondsPerGuest = 8;
+  const turnstileWaitTimeMinutes = Math.round((guestCountNum * secondsPerGuest) / (activeGates * 60));
+
   // =========================================================================
-  // SCREEN 4: BUDGET MANAGEMENT (Intelligent Division of Total Budget)
+  // SCREEN 4: BUDGET MANAGEMENT (Central State & Rebalance)
   // =========================================================================
-  // Intelligently subdivide total budget entered in setup
+  const [isBudgetRebalanced, setIsBudgetRebalanced] = useState(false);
+  const [expenseError, setExpenseError] = useState<string | null>(null);
+
+  // Categories total strictly 100% in both normal and rebalanced states (Bug 1)
   const budgetCategories = [
     { name: 'Catering, Chef Menus & Bar', pct: 32, icon: Utensils, desc: 'Cocktail hour, 4-course banquet & premium beverages' },
     { name: 'Venue Rental & Staging', pct: 28, icon: Building, desc: 'Main ballroom, outdoor courtyard & dressing suites' },
-    { name: 'Decor, Florals & Ambient Design', pct: 15, icon: Flame, desc: 'Terracotta centerpieces, canopy drape & archways' },
+    { name: 'Decor, Florals & Ambient Design', pct: isBudgetRebalanced ? 9 : 15, icon: Flame, desc: isBudgetRebalanced ? 'AI Elasticity Reallocation (−$3,900 moved to Reserve)' : 'Terracotta centerpieces, canopy drape & archways' },
     { name: 'Audio/Visual, Lighting & Production', pct: 10, icon: Sliders, desc: 'Concert sound system, DMX lighting & 4K screens' },
     { name: 'Photography & Cinematic Video', pct: 7, icon: Camera, desc: '2 lead photographers, drone cinema & highlight film' },
     { name: 'Music, Live Band & Entertainment', pct: 5, icon: Music, desc: 'String quartet reception & 7-piece evening band' },
-    { name: 'Contingency & Reserve Fund', pct: 3, icon: ShieldCheck, desc: 'Emergency backup fund & unforeseen requirements' },
+    { name: 'Contingency & Reserve Fund', pct: isBudgetRebalanced ? 9 : 3, icon: ShieldCheck, desc: isBudgetRebalanced ? 'AI Fortified Safety Buffer (Matches AI Card $4,350)' : 'Emergency backup fund & unforeseen requirements' },
   ];
 
-  const [expenses, setExpenses] = useState([
+  const initialExpenses = [
     { id: 'e1', name: 'Grand Amber Palace Initial Deposit', category: 'Venue Rental & Staging', amount: Math.round(totalBudgetNum * 0.15), status: 'Paid' },
     { id: 'e2', name: 'Master Chef Tasting & Food Retainer', category: 'Catering, Chef Menus & Bar', amount: Math.round(totalBudgetNum * 0.12), status: 'Paid' },
     { id: 'e3', name: 'Terracotta Floral Arrangement Package', category: 'Decor, Florals & Ambient Design', amount: Math.round(totalBudgetNum * 0.08), status: 'Pending' },
     { id: 'e4', name: 'Concert Sound & Intelligent Lighting Rig', category: 'Audio/Visual, Lighting & Production', amount: Math.round(totalBudgetNum * 0.06), status: 'Paid' },
-  ]);
+  ];
 
+  const [expenses, setExpenses] = useState(initialExpenses);
   const [newExpenseName, setNewExpenseName] = useState('');
   const [newExpenseAmount, setNewExpenseAmount] = useState('');
   const [newExpenseCat, setNewExpenseCat] = useState(budgetCategories[0].name);
 
+  // Central state formulas: Remaining Reserve = Total Budget - sum(PAID and PENDING)
+  const totalSpent = expenses
+    .filter((e) => e.status === 'Paid' || e.status === 'Pending')
+    .reduce((sum, item) => sum + item.amount, 0);
+  const remainingBudget = Math.max(0, totalBudgetNum - totalSpent);
+  const costPerGuest = Math.round(totalBudgetNum / (guestCountNum || 1));
+
+  // Contingency tile display value: must always match the AI Card reserve (Bug 1)
+  const contingencyTileAmount = isBudgetRebalanced ? 4350 : Math.round(totalBudgetNum * 0.03);
+
   const handleAddExpense = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newExpenseName.trim() || !newExpenseAmount) return;
+    setExpenseError(null);
+    const amt = parseFloat(newExpenseAmount);
+    if (!newExpenseName.trim()) {
+      setExpenseError('Please enter an expense or vendor title.');
+      return;
+    }
+    if (isNaN(amt) || amt <= 0) {
+      setExpenseError('Negative or zero expenses are strictly prohibited. Amount must be > $0.');
+      return;
+    }
+
     setExpenses((prev) => [
       {
-        id: Date.now().toString(),
+        id: `exp-${Date.now()}`,
         name: newExpenseName.trim(),
         category: newExpenseCat,
-        amount: Number(newExpenseAmount) || 0,
+        amount: amt,
         status: 'Pending',
       },
       ...prev,
@@ -344,22 +416,43 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
     setNewExpenseAmount('');
   };
 
-  const totalSpent = expenses.reduce((sum, item) => sum + item.amount, 0);
-  const remainingBudget = totalBudgetNum - totalSpent;
-  const costPerGuest = Math.round(totalBudgetNum / (guestCountNum || 1));
-
   // =========================================================================
-  // SCREEN 5: STAFF MANAGEMENT (Roster, Roles, Shifts, Radios)
+  // SCREEN 5: STAFF MANAGEMENT (Roster, Roles, Shifts, Radios & Shift Health)
   // =========================================================================
   const [staffFilter, setStaffFilter] = useState<'all' | 'onduty' | 'scheduled'>('all');
-  const [staffMembers, setStaffMembers] = useState([
+  const initialStaff = [
     { id: 's1', name: 'Marcus Sterling', role: 'Executive Event Producer', dept: 'Production', shift: '12:00 - 00:00', status: 'On Duty', channel: 'CH 1: Ops Master', phone: '+1 (555) 101-2001' },
     { id: 's2', name: 'Chef Julian Moretti', role: 'Executive Head Chef', dept: 'Catering', shift: '14:00 - 23:00', status: 'On Duty', channel: 'CH 2: Hospitality', phone: '+1 (555) 101-2002' },
     { id: 's3', name: 'Sarah Jenkins', role: 'Technical & AV Director', dept: 'Audio/Visual', shift: '13:00 - 23:30', status: 'On Duty', channel: 'CH 3: AV Matrix', phone: '+1 (555) 101-2003' },
     { id: 's4', name: 'Lieutenant David Vance', role: 'Chief Security Officer', dept: 'Security', shift: '16:00 - 01:00', status: 'On Duty', channel: 'CH 4: Security', phone: '+1 (555) 101-2004' },
     { id: 's5', name: 'Camilla Reyes', role: 'VIP Concierge & Lead Host', dept: 'Guest Services', shift: '17:00 - 23:00', status: 'On Duty', channel: 'CH 2: Hospitality', phone: '+1 (555) 101-2005' },
     { id: 's6', name: 'Devon Brooks', role: 'Lighting & DMX Operator', dept: 'Audio/Visual', shift: '16:30 - 00:30', status: 'Scheduled', channel: 'CH 3: AV Matrix', phone: '+1 (555) 101-2006' },
-  ]);
+  ];
+
+  const [staffMembers, setStaffMembers] = useState(initialStaff);
+
+  // Shift health calculations (Bug 4)
+  const getShiftHours = (shiftStr: string): number => {
+    const match = shiftStr.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+    if (!match) return 8;
+    let start = parseInt(match[1], 10);
+    let end = parseInt(match[3], 10);
+    if (end <= start) end += 24;
+    return end - start;
+  };
+
+  const isStaffFatigued = (staff: typeof initialStaff[0]): boolean => {
+    const hours = getShiftHours(staff.shift);
+    const hasHandover = staff.shift.includes('Handover') || staff.shift.includes('Deputy');
+    return hours >= 12 && !hasHandover && staff.status !== 'On Break';
+  };
+
+  const fatiguedStaffList = staffMembers.filter(isStaffFatigued);
+  const fatiguedCount = fatiguedStaffList.length;
+  // Shift Health must never show 100% while fatigue warning is active (Bug 4)
+  const shiftHealthScore = fatiguedCount > 0 
+    ? Math.max(48, 80 - (fatiguedCount * 14)) 
+    : 100;
 
   const [newStaffName, setNewStaffName] = useState('');
   const [newStaffRole, setNewStaffRole] = useState('');
@@ -393,6 +486,19 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
     setStaffMembers((prev) =>
       prev.map((s) => (s.id === id ? { ...s, status: s.status === 'On Duty' ? 'On Break' : 'On Duty' } : s))
     );
+  };
+
+  // Reset Demo Data function (Bug 16)
+  const handleResetDemoDataLocal = () => {
+    setIsBudgetRebalanced(false);
+    setSelectedVenueId('v1');
+    setExpenses(initialExpenses);
+    setGuests(initialGuests);
+    setStaffMembers(initialStaff);
+    setImageErrors({});
+    setActiveGates(1);
+    onResetDemoData?.();
+    setVenueNotification('Demo data reset to clean verified baseline.');
   };
 
   // =========================================================================
@@ -785,6 +891,10 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {venuesList.map((venue) => {
                 const isSelected = selectedVenueId === venue.id;
+                const isUnderCapacity = venue.capacity < guestCountNum;
+                const budgetFitPct = ((venue.pricePerDay / totalBudgetNum) * 100).toFixed(1);
+                const hasImgError = !!imageErrors[venue.id];
+
                 return (
                   <div
                     key={venue.id}
@@ -795,23 +905,38 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
                     }`}
                   >
                     <div>
-                      {/* Photo Header */}
+                      {/* Photo Header with onError Fallback */}
                       <div className="relative h-48 w-full overflow-hidden bg-stone-900">
-                        <img
-                          src={venue.image}
-                          alt={venue.name}
-                          className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#120E0C] via-transparent to-black/40" />
+                        {hasImgError ? (
+                          <div className="w-full h-full bg-gradient-to-br from-[#2E2018] via-[#1D1612] to-[#120E0C] flex flex-col items-center justify-center p-4 text-center">
+                            <Building className="w-8 h-8 text-[#D96B27] mb-2 opacity-80" />
+                            <span className="text-sm font-bold text-white line-clamp-1">{venue.name}</span>
+                            <span className="text-xs text-stone-400 mt-0.5">{venue.location}</span>
+                          </div>
+                        ) : (
+                          <img
+                            src={venue.image}
+                            alt={venue.name}
+                            onError={() => setImageErrors((prev) => ({ ...prev, [venue.id]: true }))}
+                            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                          />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#120E0C] via-transparent to-black/40 pointer-events-none" />
 
-                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-[#D96B27] text-white shadow-md">
+                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-[#D96B27] text-white shadow-md">
                           {venue.badge}
                         </div>
 
-                        <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[11px] font-bold bg-black/70 backdrop-blur-md text-amber-300 flex items-center gap-1 border border-amber-500/30">
+                        {isUnderCapacity && (
+                          <div className="absolute top-11 left-3 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-red-950/90 text-red-300 border border-red-700/80 shadow-md">
+                            Under capacity ({venue.capacity} &lt; {guestCountNum})
+                          </div>
+                        )}
+
+                        <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-xs font-bold bg-black/70 backdrop-blur-md text-amber-300 flex items-center gap-1 border border-amber-500/30">
                           <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
                           <span>{venue.rating}</span>
-                          <span className="text-[10px] text-stone-400">({venue.reviewsCount})</span>
+                          <span className="text-xs text-stone-400">({venue.reviewsCount})</span>
                         </div>
 
                         <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-stone-200">
@@ -819,8 +944,14 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
                             <MapPin className="w-3.5 h-3.5 text-[#FF7A3D]" />
                             {venue.location}
                           </span>
-                          <span className="font-mono bg-black/60 px-2 py-0.5 rounded text-[11px] text-emerald-400">
-                            Up to {venue.capacity} Guests
+                          <span
+                            className={`font-mono px-2 py-0.5 rounded text-xs ${
+                              isUnderCapacity
+                                ? 'bg-red-950/80 text-red-300 font-bold border border-red-800'
+                                : 'bg-black/60 text-emerald-400'
+                            }`}
+                          >
+                            Cap: {venue.capacity} Guests
                           </span>
                         </div>
                       </div>
@@ -833,18 +964,18 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
                           </h4>
                         </div>
 
-                        {/* Pricing and Budget Fit */}
+                        {/* Pricing and Budget Fit (Computed from rent ÷ total budget) */}
                         <div className="p-3 rounded-xl bg-[#120E0C] border border-[#221B16] flex items-center justify-between">
                           <div>
-                            <span className="text-[10px] font-mono text-stone-400 uppercase">Estimated Rental</span>
+                            <span className="text-xs font-mono text-stone-400 uppercase">Estimated Rental</span>
                             <div className="text-base font-extrabold font-mono text-[#FF7A3D]">
                               ${venue.pricePerDay.toLocaleString()}
                             </div>
                           </div>
                           <div className="text-right">
-                            <span className="text-[10px] font-mono text-stone-400 uppercase">Budget Fit</span>
+                            <span className="text-xs font-mono text-stone-400 uppercase">Budget Fit</span>
                             <div className="text-xs font-bold text-emerald-400">
-                              {venue.budgetFit}
+                              {budgetFitPct}% of budget
                             </div>
                           </div>
                         </div>
@@ -854,7 +985,7 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
                           {venue.highlights.map((h, idx) => (
                             <span
                               key={idx}
-                              className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#1F1814] text-stone-300 border border-[#2E241E]"
+                              className="text-xs font-mono px-2 py-0.5 rounded-full bg-[#1F1814] text-stone-300 border border-[#2E241E]"
                             >
                               {h}
                             </span>
@@ -863,17 +994,25 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
                       </div>
                     </div>
 
-                    {/* Action Button */}
+                    {/* Action Button: Disabled if under capacity */}
                     <div className="p-5 pt-0">
                       <button
                         onClick={() => handleSelectVenue(venue)}
-                        className={`w-full py-3 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                          isSelected
-                            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
-                            : 'bg-[#D96B27] hover:bg-[#EA580C] text-white shadow-md shadow-[#D96B27]/20'
+                        disabled={isUnderCapacity}
+                        className={`w-full py-3 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
+                          isUnderCapacity
+                            ? 'bg-stone-900 border border-stone-800 text-stone-500 cursor-not-allowed'
+                            : isSelected
+                            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 cursor-pointer'
+                            : 'bg-[#D96B27] hover:bg-[#EA580C] text-white shadow-md shadow-[#D96B27]/20 cursor-pointer'
                         }`}
                       >
-                        {isSelected ? (
+                        {isUnderCapacity ? (
+                          <>
+                            <AlertTriangle className="w-4 h-4 text-amber-500" />
+                            <span>Under Capacity (Max {venue.capacity} &lt; {guestCountNum})</span>
+                          </>
+                        ) : isSelected ? (
                           <>
                             <CheckCircle2 className="w-4 h-4" />
                             <span>Selected Primary Venue</span>
@@ -898,40 +1037,97 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
            ========================================================================= */}
         {screenIndex === 2 && (
           <div className="space-y-6">
-            {/* Guest Summary Stat Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-              <div className="bg-[#181310]/95 border border-[#2E241E] rounded-3xl p-4 sm:p-5 shadow-xl">
-                <span className="text-[11px] text-stone-400 font-medium">Total Invited</span>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-white mt-1">
-                  {guestCountNum}
+            {/* Guest Summary Stat Cards (Bug 3) */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                <div className="bg-[#181310]/95 border border-[#2E241E] rounded-2xl p-4 shadow-xl">
+                  <span className="text-xs text-stone-400 font-medium">Total Invited</span>
+                  <div className="text-2xl font-black font-mono text-white mt-1">
+                    {totalInvitedGuests}
+                  </div>
+                  <span className="text-xs text-stone-400 font-mono mt-0.5 block">Setup Target</span>
                 </div>
-                <span className="text-[10px] text-stone-500 font-mono mt-1 block">Expected Target</span>
+
+                <div className="bg-[#181310]/95 border border-[#2E241E] rounded-2xl p-4 shadow-xl">
+                  <span className="text-xs text-stone-400 font-medium">Attending (RSVP)</span>
+                  <div className="text-2xl font-black font-mono text-emerald-400 mt-1">
+                    {attendingCount}
+                  </div>
+                  <span className="text-xs text-emerald-400 font-mono mt-0.5 block">
+                    {confirmationPctOfInvited}% of Invited
+                  </span>
+                </div>
+
+                <div className="bg-[#181310]/95 border border-[#2E241E] rounded-2xl p-4 shadow-xl">
+                  <span className="text-xs text-stone-400 font-medium">Pending Response</span>
+                  <div className="text-2xl font-black font-mono text-amber-400 mt-1">
+                    {pendingCount}
+                  </div>
+                  <span className="text-xs text-amber-400 font-mono mt-0.5 block">Awaiting RSVP</span>
+                </div>
+
+                <div className="bg-[#181310]/95 border border-[#2E241E] rounded-2xl p-4 shadow-xl">
+                  <span className="text-xs text-stone-400 font-medium">Declined</span>
+                  <div className="text-2xl font-black font-mono text-rose-400 mt-1">
+                    {declinedCount}
+                  </div>
+                  <span className="text-xs text-rose-400 font-mono mt-0.5 block">Regrets Sent</span>
+                </div>
+
+                <div className="col-span-2 sm:col-span-1 bg-[#181310]/95 border border-[#2E241E] rounded-2xl p-4 shadow-xl">
+                  <span className="text-xs text-stone-400 font-medium">Checked-In at Door</span>
+                  <div className="text-2xl font-black font-mono text-[#FF7A3D] mt-1">
+                    {checkedInCount}
+                  </div>
+                  <span className="text-xs text-stone-300 font-mono mt-0.5 block">Live Turnstile</span>
+                </div>
               </div>
 
-              <div className="bg-[#181310]/95 border border-[#2E241E] rounded-3xl p-4 sm:p-5 shadow-xl">
-                <span className="text-[11px] text-stone-400 font-medium">Attending (RSVP)</span>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-400 mt-1">
-                  {attendingCount}
-                </div>
-                <span className="text-[10px] text-emerald-500 font-mono mt-1 block">
-                  {Math.round((attendingCount / guests.length) * 100)}% Confirmation
-                </span>
+              {/* Sample Subset Clarification Badge */}
+              <div className="px-3.5 py-1.5 rounded-xl bg-[#14100E] border border-[#221B16] flex items-center justify-between text-xs text-stone-400 font-mono">
+                <span>Confirmation rate: <strong className="text-emerald-400 font-bold">{confirmationPctOfInvited}%</strong> ({attendingCount} attending ÷ {totalInvitedGuests} invited)</span>
+                <span className="text-stone-300">Registry list displays sample cohort of {guests.length} records</span>
               </div>
 
-              <div className="bg-[#181310]/95 border border-[#2E241E] rounded-3xl p-4 sm:p-5 shadow-xl">
-                <span className="text-[11px] text-stone-400 font-medium">Pending Response</span>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-amber-400 mt-1">
-                  {pendingCount}
+              {/* Turnstile Queue Math Formula Box (Bug 5) */}
+              <div className="p-4 rounded-2xl bg-[#120E0C] border border-[#2A221C] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-mono text-[#FF7A3D]">
+                    <Clock className="w-4 h-4 text-[#D96B27]" />
+                    <span className="font-bold">EXPLICIT TURNSTILE QUEUE MATHEMATICS</span>
+                  </div>
+                  <div className="text-xs sm:text-sm text-stone-300 font-mono mt-1">
+                    ({guestCountNum} guests × {secondsPerGuest}s/guest) ÷ ({activeGates} gate{activeGates > 1 ? 's' : ''} × 60s) = <span className="text-[#FF7A3D] font-bold text-sm sm:text-base">{turnstileWaitTimeMinutes} mins wait time</span>
+                  </div>
+                  <span className="text-xs text-stone-300 mt-0.5 block">
+                    Throughput: {Math.round((activeGates * 60) / secondsPerGuest)} guests/min across {activeGates} active turnstile gate{activeGates > 1 ? 's' : ''}
+                  </span>
                 </div>
-                <span className="text-[10px] text-amber-500 font-mono mt-1 block">Reminders Sent</span>
-              </div>
-
-              <div className="bg-[#181310]/95 border border-[#2E241E] rounded-3xl p-4 sm:p-5 shadow-xl">
-                <span className="text-[11px] text-stone-400 font-medium">Checked-In at Door</span>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-[#FF7A3D] mt-1">
-                  {checkedInCount}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs text-stone-300 font-medium">Active Gates:</span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveGates(1)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                      activeGates === 1
+                        ? 'bg-[#D96B27] text-white shadow-md shadow-[#D96B27]/30'
+                        : 'bg-[#181310] text-stone-400 border border-[#2A221C] hover:text-white'
+                    }`}
+                  >
+                    1 Gate ({Math.round((guestCountNum * secondsPerGuest) / (1 * 60))}m)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveGates(2)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                      activeGates === 2
+                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                        : 'bg-[#181310] text-stone-400 border border-[#2A221C] hover:text-white'
+                    }`}
+                  >
+                    2 Gates ({Math.round((guestCountNum * secondsPerGuest) / (2 * 60))}m)
+                  </button>
                 </div>
-                <span className="text-[10px] text-stone-400 font-mono mt-1 block">Live Turnstile</span>
               </div>
             </div>
 
@@ -1205,27 +1401,29 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
                 </div>
               </div>
 
-              {/* Segmented Color Bar of Budget Division */}
+              {/* Segmented Color Bar of Budget Division (Percentages strictly total 100%) */}
               <div className="pt-6">
                 <div className="flex items-center justify-between text-xs text-stone-400 font-mono mb-2">
-                  <span>Automated Budget Breakdown (100%)</span>
+                  <span>Automated Budget Breakdown (100% Total) {isBudgetRebalanced && <strong className="text-emerald-400 ml-1">• AI Rebalanced</strong>}</span>
                   <span>Target: {guestCountNum} Guests</span>
                 </div>
                 <div className="w-full h-4 rounded-full overflow-hidden flex shadow-inner bg-stone-900">
                   <div style={{ width: '32%' }} className="bg-amber-600 h-full" title="Catering: 32%" />
                   <div style={{ width: '28%' }} className="bg-[#D96B27] h-full" title="Venue: 28%" />
-                  <div style={{ width: '15%' }} className="bg-rose-500 h-full" title="Decor: 15%" />
+                  <div style={{ width: isBudgetRebalanced ? '9%' : '15%' }} className="bg-rose-500 h-full transition-all duration-500" title={`Decor: ${isBudgetRebalanced ? 9 : 15}%`} />
                   <div style={{ width: '10%' }} className="bg-cyan-500 h-full" title="AV: 10%" />
                   <div style={{ width: '7%' }} className="bg-purple-500 h-full" title="Photo/Video: 7%" />
                   <div style={{ width: '5%' }} className="bg-indigo-500 h-full" title="Music: 5%" />
-                  <div style={{ width: '3%' }} className="bg-emerald-500 h-full" title="Contingency: 3%" />
+                  <div style={{ width: isBudgetRebalanced ? '9%' : '3%' }} className="bg-emerald-500 h-full transition-all duration-500" title={`Contingency: ${isBudgetRebalanced ? 9 : 3}%`} />
                 </div>
               </div>
 
               {/* Budget Allocation Breakdown Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mt-6">
                 {budgetCategories.map((cat, idx) => {
-                  const allocatedAmount = Math.round(totalBudgetNum * (cat.pct / 100));
+                  const allocatedAmount = cat.name === 'Contingency & Reserve Fund' 
+                    ? contingencyTileAmount 
+                    : Math.round(totalBudgetNum * (cat.pct / 100));
                   const Icon = cat.icon;
                   return (
                     <div
@@ -1250,11 +1448,11 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
                         <span className="text-lg font-black font-mono text-white">
                           ${allocatedAmount.toLocaleString()}
                         </span>
-                        <span className="text-[10px] font-mono text-stone-500">
+                        <span className="text-xs font-mono text-stone-400">
                           ~${Math.round(allocatedAmount / (guestCountNum || 1))}/guest
                         </span>
                       </div>
-                      <p className="text-[11px] text-stone-400 line-clamp-1">{cat.desc}</p>
+                      <p className="text-xs text-stone-300 line-clamp-1">{cat.desc}</p>
                     </div>
                   );
                 })}
@@ -1268,23 +1466,13 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
                 accentTitle="SCREEN 4: AI BUDGET ELASTICITY & DEFICIT SOLVER"
                 onResolve={() => {
                   onResolveScenario?.(screen4Scenario.id);
-                  if (!expenses.some((e) => e.id === 'e-ai-opt')) {
-                    setExpenses((prev) => [
-                      {
-                        id: 'e-ai-opt',
-                        name: 'AI Elasticity Rebalance (Floral Optimization & Digital Signage)',
-                        category: 'Contingency & Reserve Fund',
-                        amount: -3900,
-                        status: 'Paid',
-                      },
-                      ...prev,
-                    ]);
-                  }
+                  // Never log negative expenses; show as reallocation between categories without changing total spent (Bug 1)
+                  setIsBudgetRebalanced(true);
                 }}
                 onOpenModal={onOpenAIProblemSolver}
                 metricComparison={{
                   beforeLabel: 'Contingency Safety Fund',
-                  beforeValue: '$450 (0.7% Critical Deficit)',
+                  beforeValue: '$1,950 (3.0% Standard)',
                   afterLabel: 'Rebalanced Contingency',
                   afterValue: '$4,350 (6.7% Fortified)',
                 }}
@@ -1300,13 +1488,21 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
                     Committed Expenses & Ledger
                   </h3>
                   <p className="text-xs text-stone-400">
-                    Track actual vendor deposits, contracts, and payment milestones
+                    Track actual vendor deposits, contracts, and payment milestones (strictly positive amounts)
                   </p>
                 </div>
                 <span className="text-xs font-mono text-[#FF7A3D] bg-[#D96B27]/10 px-3 py-1 rounded-full border border-[#D96B27]/30">
                   Total Committed: ${totalSpent.toLocaleString()}
                 </span>
               </div>
+
+              {/* Expense Error Alert (Bug 1, 16) */}
+              {expenseError && (
+                <div className="mb-4 p-3 rounded-xl bg-red-950/80 border border-red-800 text-red-200 text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+                  <span>{expenseError}</span>
+                </div>
+              )}
 
               {/* Add Expense Form */}
               <form onSubmit={handleAddExpense} className="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-5">
@@ -1319,14 +1515,16 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
                 />
                 <input
                   type="number"
+                  min="1"
+                  step="any"
                   value={newExpenseAmount}
                   onChange={(e) => setNewExpenseAmount(e.target.value)}
-                  placeholder="Amount ($)"
+                  placeholder="Amount ($ > 0)"
                   className="px-3.5 py-2.5 bg-[#100D0B] border border-[#2A221C] rounded-xl text-xs text-white focus:outline-none focus:border-[#D96B27]"
                 />
                 <button
                   type="submit"
-                  className="px-4 py-2.5 bg-[#D96B27] hover:bg-[#EA580C] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-[#D96B27]/25"
+                  className="px-4 py-2.5 bg-[#D96B27] hover:bg-[#EA580C] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-[#D96B27]/25 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Log Expense</span>
@@ -1399,11 +1597,13 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
               </div>
 
               <div className="bg-[#181310]/95 border border-[#2E241E] rounded-3xl p-4 sm:p-5 shadow-xl">
-                <span className="text-[11px] text-stone-400 font-medium">Shift Health</span>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-cyan-400 mt-1">
-                  100%
+                <span className="text-xs text-stone-400 font-medium">Shift Health</span>
+                <div className={`text-2xl sm:text-3xl font-black font-mono mt-1 ${shiftHealthScore === 100 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {shiftHealthScore}%
                 </div>
-                <span className="text-[10px] text-cyan-500 font-mono mt-1 block">Zero Gaps</span>
+                <span className={`text-xs font-mono mt-1 block ${fatiguedCount > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                  {fatiguedCount > 0 ? `${fatiguedCount} Fatigue Risk Active` : '100% Roster Balance'}
+                </span>
               </div>
             </div>
 
@@ -1414,6 +1614,7 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
                 accentTitle="SCREEN 5: AI SHIFT FATIGUE & TURNSTILE SOLVER"
                 onResolve={() => {
                   onResolveScenario?.(screen5Scenario.id);
+                  setActiveGates(2);
                   setStaffMembers((prev) =>
                     prev.map((s) => {
                       if (s.id === 's6') {
@@ -1427,7 +1628,7 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
                       if (s.id === 's1') {
                         return {
                           ...s,
-                          shift: '12:00 - 00:00 (19:00 Deputy Handover)',
+                          shift: '12:00 - 00:00 (18:30 Deputy Handover)',
                         };
                       }
                       return s;
@@ -1437,11 +1638,11 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
                 onOpenModal={onOpenAIProblemSolver}
                 metricComparison={{
                   beforeLabel: 'Turnstile Queue Time',
-                  beforeValue: '38 mins (Single Host Deficit)',
+                  beforeValue: `${Math.round((guestCountNum * secondsPerGuest) / (1 * 60))} mins (1 Gate)`,
                   afterLabel: 'Dual-Gate Queue Time',
-                  afterValue: '4 mins (Zero Delay)',
+                  afterValue: `${Math.round((guestCountNum * secondsPerGuest) / (2 * 60))} mins (2 Gates)`,
                 }}
-                extraActionLabel="Deploy Dual-Gate Ingress"
+                extraActionLabel="Deploy Dual-Gate Ingress & Handover"
               />
             )}
 
@@ -1468,49 +1669,62 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
 
               {/* Roster Cards Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {staffMembers.map((staff) => (
-                  <div
-                    key={staff.id}
-                    className="p-4 rounded-2xl bg-[#120E0C] border border-[#251D18] flex flex-col justify-between space-y-3"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-white">{staff.name}</span>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#D96B27]/15 text-[#FF7A3D] border border-[#D96B27]/30">
-                            {staff.dept}
+                {staffMembers.map((staff) => {
+                  const isFatigued = isStaffFatigued(staff);
+                  return (
+                    <div
+                      key={staff.id}
+                      className={`p-4 rounded-2xl border flex flex-col justify-between space-y-3 transition-all ${
+                        isFatigued
+                          ? 'bg-[#1C120E] border-amber-800/80 shadow-md shadow-amber-950/40'
+                          : 'bg-[#120E0C] border-[#251D18]'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-white">{staff.name}</span>
+                            <span className="text-xs font-mono px-2 py-0.5 rounded bg-[#D96B27]/15 text-[#FF7A3D] border border-[#D96B27]/30">
+                              {staff.dept}
+                            </span>
+                          </div>
+                          <span className="text-xs text-stone-300 font-medium block mt-0.5">
+                            {staff.role}
                           </span>
+                          {isFatigued && (
+                            <div className="mt-1.5 flex items-center gap-1.5 text-xs text-amber-300 font-mono bg-amber-950/70 border border-amber-800 px-2 py-0.5 rounded-md">
+                              <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                              <span>Fatigue Alert: 12h+ continuous shift scheduled</span>
+                            </div>
+                          )}
                         </div>
-                        <span className="text-xs text-stone-300 font-medium block mt-0.5">
-                          {staff.role}
-                        </span>
+
+                        <button
+                          onClick={() => toggleStaffStatus(staff.id)}
+                          className={`text-xs font-mono px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer ${
+                            staff.status === 'On Duty'
+                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                              : 'bg-amber-950 text-amber-400 border border-amber-800'
+                          }`}
+                        >
+                          {staff.status}
+                        </button>
                       </div>
 
-                      <button
-                        onClick={() => toggleStaffStatus(staff.id)}
-                        className={`text-[10px] font-mono px-2.5 py-1 rounded-full font-bold transition-all ${
-                          staff.status === 'On Duty'
-                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                            : 'bg-amber-950 text-amber-400 border border-amber-800'
-                        }`}
-                      >
-                        {staff.status}
-                      </button>
-                    </div>
+                      <div className="flex items-center justify-between text-xs text-stone-400 pt-2 border-t border-[#201814]">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-[#D96B27]" />
+                          <span className="font-mono text-xs">{staff.shift}</span>
+                        </div>
 
-                    <div className="flex items-center justify-between text-xs text-stone-400 pt-2 border-t border-[#201814]">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-[#D96B27]" />
-                        <span className="font-mono text-[11px]">{staff.shift}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 text-stone-300 font-mono text-[11px]">
-                        <Radio className="w-3.5 h-3.5 text-[#FF7A3D]" />
-                        <span>{staff.channel}</span>
+                        <div className="flex items-center gap-1.5 text-stone-300 font-mono text-xs">
+                          <Radio className="w-3.5 h-3.5 text-[#FF7A3D]" />
+                          <span>{staff.channel}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -1750,12 +1964,35 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
                     <span>View Terms & Conditions</span>
                   </button>
                 </div>
+                {/* 5. Reset Demo Data Action (Bug 16) */}
+                <div className="p-5 rounded-2xl bg-[#14100E] border border-amber-900/40 space-y-3 flex flex-col justify-between sm:col-span-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 text-[#FF7A3D] mb-1">
+                        <Sparkles className="w-4 h-4 text-[#D96B27]" />
+                        <span className="text-xs font-mono font-bold uppercase">System Maintenance</span>
+                      </div>
+                      <h4 className="text-base font-bold text-white">Reset Demo Data</h4>
+                      <p className="text-xs text-stone-400 mt-1">
+                        Re-initialize all budgets, venue selections, guest registries, and crew rosters back to clean verified baseline.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleResetDemoDataLocal}
+                      className="px-5 py-2.5 rounded-xl bg-[#251D18] hover:bg-[#34241C] border border-[#D96B27]/40 text-[#FF7A3D] hover:text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
+                    >
+                      <Sparkles className="w-4 h-4 text-[#D96B27]" />
+                      <span>Reset Demo Data</span>
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              {/* Log Out Bar */}
+              {/* Log Out Bar with Signed-in Producer Identity (Bug 7) */}
               <div className="mt-6 pt-6 border-t border-[#2A221D] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="text-xs text-stone-400">
-                  Signed in as <span className="text-stone-200 font-semibold">{currentEvent.honoreeOrHost} (Producer Console)</span>
+                  Signed in as <strong className="text-stone-200 font-bold">{currentUser?.name || 'Director Quantrom'}</strong> <span className="text-stone-500 font-mono">({currentUser?.email || 'quantromxx@gmail.com'})</span>
                 </div>
                 <button
                   onClick={onLogOut}
@@ -1941,7 +2178,19 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
           </div>
         )}
 
-        {/* Quick Navigation Between the 6 Screens */}
+        {/* =========================================================================
+            SCREEN 7: MULTI-DAY AI EVENT CONCIERGE & CHATBOT
+           ========================================================================= */}
+        {screenIndex === 6 && (
+          <div className="h-[750px] min-h-[600px] rounded-3xl overflow-hidden border border-[#2E241E] shadow-2xl">
+            <AiChatbotScreen
+              eventData={currentEvent}
+              onJumpToScreen={onJumpToScreen}
+            />
+          </div>
+        )}
+
+        {/* Quick Navigation Between All 7 Screens */}
         <div className="pt-6 border-t border-[#2A221D] flex flex-wrap items-center justify-between gap-3 text-xs">
           <span className="text-stone-400">
             Slide screen up/down for all details • Quick jump between screens:

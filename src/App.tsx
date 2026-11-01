@@ -10,11 +10,20 @@ import { SplashAnimationScreen } from './components/SplashAnimationScreen';
 import { SignScreen } from './components/SignScreen';
 import { EventSetupScreen } from './components/EventSetupScreen';
 import { SwipeHubScreen } from './components/SwipeHubScreen';
+import { EventProvider } from './context/EventContext';
 
 export default function App() {
   const [currentStep, setCurrentStep] = useState<AppStep>('splash');
   const [splashKey, setSplashKey] = useState<number>(0);
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const defaultUser: AuthUser = {
+    name: 'Director Quantrom',
+    email: 'quantromxx@gmail.com',
+    role: 'Producer',
+    provider: 'email',
+    token: 'auth-token-quantrom',
+    signedInAt: '12:00:00',
+  };
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(defaultUser);
   const [eventData, setEventData] = useState<EventSetupData>({
     eventName: 'Royal Heritage Grand Wedding Gala',
     eventType: 'Wedding',
@@ -28,12 +37,12 @@ export default function App() {
     themeStyle: 'Claude Terracotta & Royal Gold',
     budgetTier: 'Grand Celebration',
     enabledModules: {
-      runOfShowClock: true,
-      multiTrackAgenda: true,
-      vipGateRadar: true,
-      avLightingMatrix: true,
-      crowdFlowHeatmap: true,
-      emergencyDispatch: true,
+      dashboardChecklist: true,
+      venueDiscovery: true,
+      guestRegistry: true,
+      budgetLedger: true,
+      staffOps: true,
+      eventControls: true,
     },
   });
 
@@ -61,11 +70,10 @@ export default function App() {
     setCurrentStep('splash');
   };
 
-  const steps: { id: AppStep; index: number }[] = [
-    { id: 'splash', index: 1 },
-    { id: 'sign', index: 2 },
-    { id: 'event-setup', index: 3 },
-    { id: 'swipe-screens', index: 4 },
+  const onboardingSteps: { id: AppStep; index: number; label: string }[] = [
+    { id: 'splash', index: 1, label: 'Intro' },
+    { id: 'sign', index: 2, label: 'Sign In' },
+    { id: 'event-setup', index: 3, label: 'Event Setup' },
   ];
 
   return (
@@ -76,10 +84,11 @@ export default function App() {
           : 'min-h-screen'
       }`}
     >
-      {/* Discreet floating stage switcher for easy navigation on subsequent screens */}
-      {currentStep !== 'splash' && (
-        <div className="fixed top-4 right-4 z-50 flex items-center gap-1.5 p-1 rounded-full bg-slate-900/40 backdrop-blur-md border border-stone-800/80 shadow-md">
-          {steps.map((st) => {
+      {/* Onboarding Stage Stepper: Hidden after login/in workspace (Bug 10) */}
+      {(currentStep === 'sign' || currentStep === 'event-setup') && (
+        <div className="fixed top-4 right-4 z-40 flex items-center gap-1.5 p-1.5 rounded-full bg-[#181310]/90 backdrop-blur-md border border-[#2E241E] shadow-xl">
+          <span className="text-xs font-mono text-stone-400 px-2 font-medium">Stage</span>
+          {onboardingSteps.map((st) => {
             const isActive = currentStep === st.id;
             return (
               <button
@@ -91,12 +100,12 @@ export default function App() {
                     setCurrentStep(st.id);
                   }
                 }}
-                className={`w-6 h-6 rounded-full text-[11px] font-mono flex items-center justify-center transition-all ${
+                className={`w-7 h-7 rounded-full text-xs font-mono flex items-center justify-center transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-[#D96B27] text-white font-bold shadow-sm'
-                    : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/60'
+                    ? 'bg-[#D96B27] text-white font-bold shadow-md shadow-[#D96B27]/30 ring-1 ring-[#FF7A3D]'
+                    : 'text-stone-400 hover:text-white hover:bg-stone-800/60'
                 }`}
-                title={`Stage ${st.index}`}
+                title={`Stage ${st.index}: ${st.label}`}
               >
                 {st.index}
               </button>
@@ -166,20 +175,20 @@ export default function App() {
             transition={{ duration: 0.3 }}
             className="w-full min-h-screen"
           >
-            <SwipeHubScreen
-              eventData={eventData}
-              onBackToSetup={() => setCurrentStep('event-setup')}
-              onEditSetup={() => setCurrentStep('event-setup')}
-              onUpdateEventData={(data) => setEventData((prev) => ({ ...prev, ...data }))}
-              onLogOut={() => {
-                setCurrentUser(null);
-                setCurrentStep('sign');
-              }}
-              onEndEvent={() => {
-                setCurrentStep('splash');
-                setSplashKey((k) => k + 1);
-              }}
-            />
+            <EventProvider initialData={eventData} initialUser={currentUser}>
+              <SwipeHubScreen
+                onBackToSetup={() => setCurrentStep('event-setup')}
+                onEditSetup={() => setCurrentStep('event-setup')}
+                onLogOut={() => {
+                  setCurrentUser(null);
+                  setCurrentStep('sign');
+                }}
+                onEndEvent={() => {
+                  setCurrentStep('splash');
+                  setSplashKey((k) => k + 1);
+                }}
+              />
+            </EventProvider>
           </motion.div>
         )}
       </AnimatePresence>

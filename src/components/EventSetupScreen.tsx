@@ -74,6 +74,31 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
     initialData?.startTime || '18:00'
   );
 
+  // Multi-Day Itinerary Synchronization helper
+  const computeOffsetDate = (baseStr: string, offsetDays: number): string => {
+    try {
+      const parts = baseStr.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        const d = new Date(Date.UTC(year, month, day));
+        d.setUTCDate(d.getUTCDate() + offsetDays);
+        return d.toISOString().split('T')[0];
+      }
+      return baseStr;
+    } catch {
+      return baseStr;
+    }
+  };
+
+  const multiDaySchedule = {
+    dayMinus1: computeOffsetDate(startDate, -1),
+    day1: startDate,
+    day2: computeOffsetDate(startDate, 1),
+    day3: computeOffsetDate(startDate, 2),
+  };
+
   // Honoree / Host
   const [honoreeOrHost, setHonoreeOrHost] = useState(
     initialData?.honoreeOrHost || 'Evelyn & Julian Vance'
@@ -92,21 +117,64 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
     initialData?.totalBudget || 65000
   );
 
-  // 6 Swipe Screen Module Activations
+  // 6 Swipe Screen Module Activations matching the actual tabs
   const [modules, setModules] = useState({
-    runOfShowClock: true,
-    multiTrackAgenda: true,
-    vipGateRadar: true,
-    avLightingMatrix: true,
-    crowdFlowHeatmap: true,
-    emergencyDispatch: true,
+    dashboardChecklist: true,
+    venueDiscovery: true,
+    guestRegistry: true,
+    budgetLedger: true,
+    staffOps: true,
+    eventControls: true,
   });
 
   const toggleModule = (key: keyof typeof modules) => {
     setModules((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Event Type Options Catalog
+  // Form Validation & Error state
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!eventName.trim()) {
+      setValidationError('Please enter a valid event celebration name');
+      return;
+    }
+    if (!guestCount.trim() || Number(guestCount) <= 0) {
+      setValidationError('Please specify a positive guest attendance capacity');
+      return;
+    }
+    if (totalBudget < 1000) {
+      setValidationError('Total budget must be at least $1,000 USD');
+      return;
+    }
+
+    setValidationError(null);
+    const finalData: EventSetupData = {
+      eventName: eventName.trim() || 'Royal Heritage Grand Wedding Gala',
+      eventType,
+      venueName: venueName.trim() || 'The Grand Amber Palace - Crystal Ballroom',
+      venueCity: venueCity.trim() || 'Metropolis Central',
+      guestCount: guestCount || '450',
+      totalBudget: Number(totalBudget) || 65000,
+      startDate,
+      startTime,
+      honoreeOrHost: honoreeOrHost.trim() || 'Evelyn & Julian Vance',
+      themeStyle,
+      budgetTier,
+      multiDaySchedule,
+      enabledModules: {
+        ...modules,
+        runOfShowClock: modules.dashboardChecklist,
+        multiTrackAgenda: modules.venueDiscovery,
+        vipGateRadar: modules.guestRegistry,
+        avLightingMatrix: modules.budgetLedger,
+        crowdFlowHeatmap: modules.staffOps,
+        emergencyDispatch: modules.eventControls,
+      },
+    };
+    onContinue(finalData);
+  };
   const eventTypesCatalog: {
     id: EventSetupData['eventType'];
     title: string;
@@ -206,25 +274,6 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
     }
   };
 
-  // Form Submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const finalData: EventSetupData = {
-      eventName: eventName.trim() || 'AI Celebration 2026',
-      eventType,
-      venueName: venueName.trim() || 'Grand Arena',
-      venueCity: venueCity.trim() || 'Metropolis Central',
-      guestCount: guestCount || '250',
-      totalBudget: Number(totalBudget) || 65000,
-      startDate,
-      startTime,
-      honoreeOrHost: honoreeOrHost.trim() || 'Event Hosts',
-      themeStyle,
-      budgetTier,
-      enabledModules: modules,
-    };
-    onContinue(finalData);
-  };
 
   return (
     <div className="relative min-h-screen w-full bg-[#120E0C] text-[#FAF8F5] flex flex-col justify-between font-sans px-4 py-6 sm:py-8 pb-24 touch-pan-y">
@@ -524,7 +573,7 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-[#2A221D]">
               <div>
                 <label className="block text-xs font-medium text-stone-300 mb-1.5">
-                  Target Event Date
+                  Target Opening Date (Day 1)
                 </label>
                 <div className="relative">
                   <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
@@ -554,7 +603,50 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Multi-Day Event Schedule Preview (Synchronized with AI Chatbot Day -1 to Day 3) */}
+            <div className="mt-4 p-4 rounded-2xl bg-[#120E0C] border border-[#281F19] space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#D96B27]" />
+                  <span>Synchronized Multi-Day Itinerary (Day −1 to Day 3)</span>
+                </span>
+                <span className="text-[11px] font-mono text-[#FF7A3D] bg-[#D96B27]/15 px-2 py-0.5 rounded border border-[#D96B27]/30">
+                  4-Phase Timeline
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="p-2.5 rounded-xl bg-[#1A130F] border border-[#2A221C]">
+                  <span className="text-[10px] font-mono text-stone-400 block uppercase">Day −1 (Load-In)</span>
+                  <span className="text-xs font-bold text-white font-mono">{multiDaySchedule.dayMinus1}</span>
+                  <span className="text-[10px] text-stone-400 block mt-0.5 truncate">Rigging & AV Tuning</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[#1A130F] border border-[#D96B27]/40 ring-1 ring-[#D96B27]/20">
+                  <span className="text-[10px] font-mono text-[#FF7A3D] block uppercase font-bold">Day 1 (Opening)</span>
+                  <span className="text-xs font-bold text-white font-mono">{multiDaySchedule.day1}</span>
+                  <span className="text-[10px] text-stone-300 block mt-0.5 truncate">Welcome & VIP Dinner</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[#1A130F] border border-[#2A221C]">
+                  <span className="text-[10px] font-mono text-stone-400 block uppercase">Day 2 (Grand Gala)</span>
+                  <span className="text-xs font-bold text-white font-mono">{multiDaySchedule.day2}</span>
+                  <span className="text-[10px] text-stone-400 block mt-0.5 truncate">Masterclasses & Band</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[#1A130F] border border-[#2A221C]">
+                  <span className="text-[10px] font-mono text-stone-400 block uppercase">Day 3 (Adjourn)</span>
+                  <span className="text-xs font-bold text-white font-mono">{multiDaySchedule.day3}</span>
+                  <span className="text-[10px] text-stone-400 block mt-0.5 truncate">Farewell & Safe Strike</span>
+                </div>
+              </div>
+            </div>
           </div>
+
+          {/* Validation Error Alert if triggered */}
+          {validationError && (
+            <div className="p-4 rounded-2xl bg-red-950/80 border border-red-700 text-red-200 text-xs font-medium flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-400 animate-ping shrink-0" />
+              <span>{validationError}</span>
+            </div>
+          )}
 
           {/* Section 3: Atmosphere, Theme & 6-Screen Activation Grid */}
           <div className="bg-[#181310]/95 border border-[#2E241E] rounded-3xl p-6 sm:p-7 shadow-2xl backdrop-blur-xl">
@@ -565,62 +657,62 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-white tracking-tight">
-                    Swipe Workspace Engine Modules (6 Screens)
+                    Workspace Tabs & Management Modules (6 Screens)
                   </h2>
                   <p className="text-xs text-stone-400">
-                    Pre-activated reasons for each of the 6 sliding management screens
+                    The 6 sliding workspaces matched to your production operations
                   </p>
                 </div>
               </div>
               <span className="text-xs font-mono text-emerald-400 bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-800/40">
-                ALL READY
+                ALL 6 TABS ACTIVE
               </span>
             </div>
 
-            {/* 6 Engine Modules Grid */}
+            {/* 6 Engine Modules Grid Matching Actual Tabs */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-5">
               {[
                 {
-                  key: 'runOfShowClock' as const,
-                  title: 'Screen 1: Live Run-of-Show',
-                  desc: 'Stage master clocks & active cue rail',
+                  key: 'dashboardChecklist' as const,
+                  title: 'Screen 1: Event Dashboard',
+                  desc: 'Master readiness checklist, countdown & honoree summary',
                   icon: Activity,
                   color: 'text-[#D96B27]',
                 },
                 {
-                  key: 'multiTrackAgenda' as const,
-                  title: 'Screen 2: Multi-Track Agenda',
-                  desc: 'Multi-stage timelines & speaker Green Room',
-                  icon: Calendar,
-                  color: 'text-[#EA580C]',
-                },
-                {
-                  key: 'vipGateRadar' as const,
-                  title: 'Screen 3: Attendee & VIP Access',
-                  desc: 'Turnstiles throughput & badge verification',
-                  icon: Users,
+                  key: 'venueDiscovery' as const,
+                  title: 'Screen 2: Venue Intelligence',
+                  desc: 'Live web-matched venues, pricing tiers & capacity fit',
+                  icon: Building,
                   color: 'text-[#38BDF8]',
                 },
                 {
-                  key: 'avLightingMatrix' as const,
-                  title: 'Screen 4: AV & NDI Matrix',
-                  desc: 'Video SDI/NDI feeds, sound dB & DMX lighting',
-                  icon: Tv,
+                  key: 'guestRegistry' as const,
+                  title: 'Screen 3: Guest Management',
+                  desc: 'Searchable guest registry, VIP tables & allergy protocols',
+                  icon: Users,
                   color: 'text-[#F59E0B]',
                 },
                 {
-                  key: 'crowdFlowHeatmap' as const,
-                  title: 'Screen 5: Zone Crowd Radar',
-                  desc: 'Heatmaps, dwell time & choke-point alerts',
-                  icon: Radio,
+                  key: 'budgetLedger' as const,
+                  title: 'Screen 4: Smart Budget',
+                  desc: 'Automated subdivisions, paid/pending ledger & reserve',
+                  icon: Sliders,
                   color: 'text-[#10B981]',
                 },
                 {
-                  key: 'emergencyDispatch' as const,
-                  title: 'Screen 6: Incident & Protocols',
-                  desc: 'Staff dispatch walkies & safety SOP triggers',
-                  icon: ShieldCheck,
+                  key: 'staffOps' as const,
+                  title: 'Screen 5: Staff Ops & Health',
+                  desc: 'Roster shifts, encrypted radios & fatigue safety watch',
+                  icon: Radio,
                   color: 'text-[#EC4899]',
+                },
+                {
+                  key: 'eventControls' as const,
+                  title: 'Screen 6: Event Controls',
+                  desc: 'Safe end event, revise setup, share pass, T&C & sign out',
+                  icon: ShieldCheck,
+                  color: 'text-[#A855F7]',
                 },
               ].map((m) => {
                 const isEnabled = modules[m.key];
@@ -647,7 +739,7 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
                     <span className="text-xs font-bold block text-white truncate">
                       {m.title}
                     </span>
-                    <span className="text-[11px] text-stone-400 block mt-0.5 line-clamp-1">
+                    <span className="text-xs text-stone-300 block mt-0.5 line-clamp-1">
                       {m.desc}
                     </span>
                   </button>

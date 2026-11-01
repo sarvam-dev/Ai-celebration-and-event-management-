@@ -25,10 +25,29 @@ export const SplashAnimationScreen: React.FC<SplashAnimationScreenProps> = ({
   const endAngle = -22;
   const angleSpan = endAngle - startAngle; // 136 degrees
 
+  // Proportional optical kerning weights to eliminate gaps in CELEBRATION
+  const getCharWeight = (char: string) => {
+    if (char === ' ') return 0.55; // Natural word space
+    if (char === 'I') return 0.45; // Narrow kerning for 'I'
+    if (char === 'M' || char === 'W') return 1.25; // Wide characters
+    if (char === 'E' || char === 'L' || char === 'F') return 0.82; // Compact arm characters
+    if (char === 'T' || char === 'J') return 0.88;
+    if (char === 'A' || char === 'O' || char === 'C' || char === 'G') return 1.02;
+    return 0.95; // C, E, L, E, B, R, A, T, I, O, N balanced kerning
+  };
+
   const letterData = useMemo(() => {
-    const total = characters.length;
+    const weights = characters.map(getCharWeight);
+    const totalWeight = weights.reduce((acc, w) => acc + w, 0);
+
+    let cumulativeWeight = 0;
     return characters.map((char, i) => {
-      const progress = i / (total - 1);
+      const charWeight = weights[i];
+      // Place anchor precisely at midpoint of character's optical space
+      const midpointWeight = cumulativeWeight + charWeight / 2;
+      cumulativeWeight += charWeight;
+
+      const progress = midpointWeight / totalWeight;
       const angleDeg = startAngle + progress * angleSpan;
       const angleRad = (angleDeg * Math.PI) / 180;
 
@@ -190,7 +209,7 @@ export const SplashAnimationScreen: React.FC<SplashAnimationScreenProps> = ({
                     fontWeight: 900,
                     fontSize: item.char === ' ' ? '18px' : '31px',
                     width: item.char === ' ' ? '18px' : 'auto',
-                    letterSpacing: '0.04em',
+                    letterSpacing: 'normal',
                     lineHeight: 1,
                     // Deep, heavy, solid 3D extrusion in Claude terracotta / orange
                     textShadow: `

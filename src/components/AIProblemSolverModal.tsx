@@ -126,12 +126,12 @@ export const AIProblemSolverModal: React.FC<AIProblemSolverModalProps> = ({
                 <h2 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
                   <span>AI Logical Thinking & Problem Solver Engine</span>
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#D96B27]/20 text-[#FF7A3D] border border-[#D96B27]/40">
-                    Gemini 2.5 Active
+                    Gemini 3.8 Flash Active
                   </span>
                 </h2>
               </div>
               <p className="text-xs text-stone-400">
-                Automated dilemma detection, constraint satisfaction, and trade-off synthesis across all 6 screens
+                Automated dilemma detection, constraint satisfaction, and trade-off synthesis across all 7 event screens
               </p>
             </div>
           </div>
@@ -218,6 +218,7 @@ export const AIProblemSolverModal: React.FC<AIProblemSolverModalProps> = ({
                   { num: 4, label: '4. Budget' },
                   { num: 5, label: '5. Staff' },
                   { num: 6, label: '6. Controls' },
+                  { num: 7, label: '7. AI Chatbot' },
                 ].map((s) => (
                   <button
                     key={s.num}

@@ -32,3 +32,13 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(234, 88, 12, 0.75);
 }
+
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #1a1a1a !important;
+  }
+  header, footer, nav, button, .no-print {
+    display: none !important;
+  }
+}

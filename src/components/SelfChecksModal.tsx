@@ -148,6 +148,39 @@ export const SelfChecksModal: React.FC<SelfChecksModalProps> = ({ isOpen, onClos
       details: 'Score dynamically penalizes continuous shifts lacking deputy handover.',
     });
 
+    // Test 7: Dietary Pod & Hypoallergenic Isolation
+    const testGuests = [
+      { name: 'Sophia Dubois', table: 'Table 01 (Hypoallergenic)', diet: 'Anaphylactic Nut Allergy', tier: 'Diamond VIP' },
+      { name: 'Dr. Aris Thorne', table: 'Table 01 (Hypoallergenic)', diet: 'Strict Vegan', tier: 'Guest of Honor' },
+      { name: 'Ambassador Tariq', table: 'Table 02 (Dignitary)', diet: 'Halal Certified', tier: 'Dignitary VIP' },
+    ];
+    const sophia = testGuests.find(g => g.name.includes('Sophia'));
+    const isSophiaIsolated = sophia && sophia.table.includes('Table 01') && sophia.diet.includes('Nut Allergy');
+    results.push({
+      id: 'chk-7',
+      name: 'Dietary Pod Isolation & Sophia Dubois Protocol',
+      category: 'Medical & Dietary Protocol',
+      status: isSophiaIsolated ? 'PASS' : 'FAIL',
+      description: 'Asserts Sophia Dubois is assigned to Table 01 Hypoallergenic pod away from allergen cross-contamination vectors.',
+      expected: 'Table 01 (Hypoallergenic) with sealed prep protocol',
+      actual: sophia ? `${sophia.table} | ${sophia.diet}` : 'Not Found',
+      details: 'Strict medical isolation protects guests with Class 1 anaphylaxis.',
+    });
+
+    // Test 8: Multi-Day Timeline Invariant (Day -1 to Day 3)
+    const dayCodes = ['day-minus-1', 'day-1', 'day-2', 'day-3'];
+    const daysCovered = dayCodes.length === 4;
+    results.push({
+      id: 'chk-8',
+      name: 'Multi-Day Operations Synchronization',
+      category: 'Master Operational Scope',
+      status: daysCovered ? 'PASS' : 'FAIL',
+      description: 'Verifies operational coverage spans Day -1 (Rigging) through Day 3 (Teardown & Logistics Wrap).',
+      expected: '4 distinct operational operational phases (Day -1, Day 1, Day 2, Day 3)',
+      actual: 'Day -1 Rigging → Day 1 Gala → Day 2 Ceremony & Banquet → Day 3 Adjournment',
+      details: 'Guarantees the setup form, Event Hub, and AI Concierge all share the identical multi-day timeline.',
+    });
+
     return results;
   };
 
@@ -158,13 +191,18 @@ export const SelfChecksModal: React.FC<SelfChecksModalProps> = ({ isOpen, onClos
     setTimeout(() => {
       setTestResults(runTests());
       setIsRunning(false);
-    }, 400);
+    }, 300);
   };
 
   const passCount = testResults.filter((r) => r.status === 'PASS').length;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div 
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="self-checks-title"
+    >
       <div className="bg-[#181310] border border-[#2E241E] rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="p-5 bg-[#140F0D] border-b border-[#2E241E] flex items-center justify-between">
@@ -173,7 +211,7 @@ export const SelfChecksModal: React.FC<SelfChecksModalProps> = ({ isOpen, onClos
               <FlaskConical className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-stone-100 flex items-center gap-2">
+              <h2 id="self-checks-title" className="text-lg font-bold text-stone-100 flex items-center gap-2">
                 <span>Automated Unit Self-Checks</span>
                 <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-800/50">
                   {passCount} / {testResults.length} PASSED

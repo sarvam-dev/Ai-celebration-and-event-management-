@@ -16,11 +16,14 @@ import {
   Flame,
   Award,
   Zap,
-  Trash2
+  Trash2,
+  FileDown
 } from 'lucide-react';
 import { useEvent } from '../../context/EventContext';
 import { ScreenHeader } from '../shared/ScreenHeader';
 import { ScreenAISolverWidget } from '../ScreenAISolverWidget';
+import { PdfExportModal } from '../PdfExportModal';
+import { PdfExportData } from '../../utils/pdfExport';
 
 interface ChecklistItem {
   id: string;
@@ -48,7 +51,21 @@ export const DashboardScreen: React.FC = () => {
     totalBudget, 
     totalSpent, 
     remainingReserve, 
+    costPerGuest,
+    categoryAllocations,
+    expenses,
     guestList, 
+    totalInvited,
+    attendingCount,
+    pendingCount,
+    declinedCount,
+    checkedInCount,
+    confirmationRate,
+    turnstileGates,
+    secondsPerGuest,
+    queueWaitTime,
+    throughputPerMinute,
+    staffRoster,
     shiftHealth,
     scenarios,
     resolveScenario,
@@ -58,6 +75,7 @@ export const DashboardScreen: React.FC = () => {
   const [checklist, setChecklist] = useState<ChecklistItem[]>(INITIAL_CHECKLIST);
   const [newTodoText, setNewTodoText] = useState('');
   const [newTodoCategory, setNewTodoCategory] = useState('Production');
+  const [showPdfModal, setShowPdfModal] = useState(false);
 
   const guestCountNum = Number(eventData.guestCount) || 450;
   const completedCount = checklist.filter((i) => i.done).length;
@@ -187,6 +205,13 @@ export const DashboardScreen: React.FC = () => {
                 <div className="text-stone-400 font-mono">Theme Style</div>
                 <div className="font-semibold text-stone-200">{eventData.themeStyle}</div>
               </div>
+              <button
+                onClick={() => setShowPdfModal(true)}
+                className="px-4 py-2 rounded-lg bg-[#221A15] hover:bg-[#2A201A] border border-[#3E2D22] text-stone-200 hover:text-white text-sm font-semibold flex items-center gap-2 transition-all shadow-md cursor-pointer"
+              >
+                <FileDown className="w-4 h-4 text-[#D96B27]" />
+                <span>Export PDF Dossier</span>
+              </button>
               <button
                 onClick={() => setActiveScreenIndex(1)}
                 className="px-4 py-2 rounded-lg bg-[#D96B27] hover:bg-[#EA580C] text-white text-sm font-semibold flex items-center gap-2 transition-all shadow-md shadow-[#D96B27]/20 cursor-pointer"
@@ -355,6 +380,38 @@ export const DashboardScreen: React.FC = () => {
           </form>
         </div>
       </div>
+
+      {/* Master PDF Export Modal */}
+      <PdfExportModal
+        isOpen={showPdfModal}
+        onClose={() => setShowPdfModal(false)}
+        exportData={{
+          eventData,
+          currentUser,
+          selectedVenue,
+          totalBudget,
+          totalSpent,
+          remainingReserve,
+          costPerGuest,
+          categoryAllocations,
+          expenses,
+          checklist,
+          guestList,
+          totalInvited,
+          attendingCount,
+          pendingCount,
+          declinedCount,
+          checkedInCount,
+          confirmationRate,
+          turnstileGates,
+          secondsPerGuest,
+          queueWaitTime,
+          throughputPerMinute,
+          staffRoster,
+          shiftHealth,
+          scenarios,
+        }}
+      />
     </div>
   );
 };

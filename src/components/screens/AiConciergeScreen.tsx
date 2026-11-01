@@ -103,17 +103,23 @@ export const AiConciergeScreen: React.FC<{ isActive?: boolean }> = ({ isActive =
     setInputText('');
     setIsLoading(true);
 
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 10000);
+
     try {
       // Rebuild fresh live state context on every call
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: abortController.signal,
         body: JSON.stringify({
           message: text.trim(),
           dayContext: selectedDayTab,
+          selectedDay: selectedDayTab,
           eventData: {
             ...eventData,
             venueName: selectedVenue?.name || eventData.venueName,
+            venueCity: selectedVenue?.area ? `${selectedVenue.area}, ${eventData.venueCity}` : eventData.venueCity,
             totalBudget,
             totalSpent,
             remainingReserve,
@@ -129,19 +135,25 @@ export const AiConciergeScreen: React.FC<{ isActive?: boolean }> = ({ isActive =
           history: messages.slice(-10).map((m) => ({
             role: m.sender === 'user' ? 'user' : 'model',
             content: m.text,
+            text: m.text,
+            parts: [{ text: m.text }],
           })),
         }),
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`Chat query failed with status ${response.status}`);
       }
 
       const data = await response.json();
+      const replyContent = data.reply || data.message || data.text || 'Operational metrics verified against central event ledger.';
+
       const botMsg: ChatMessage = {
         id: `bot-${Date.now()}`,
         sender: 'assistant',
-        text: data.reply || 'Data recorded and verified against live system parameters.',
+        text: replyContent,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         dayTag: selectedDayTab,
         modelSource: data.model || 'Gemini 3.8 Flash',
@@ -149,7 +161,12 @@ export const AiConciergeScreen: React.FC<{ isActive?: boolean }> = ({ isActive =
 
       setMessages((prev) => [...prev, botMsg]);
     } catch (err: any) {
-      setErrorNotice(err.message || 'Unable to connect to Gemini AI Concierge. Please retry.');
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        setErrorNotice('The concierge request timed out. Please retry.');
+      } else {
+        setErrorNotice(err.message || 'Unable to connect to Gemini AI Concierge. Please retry.');
+      }
     } finally {
       setIsLoading(false);
     }

@@ -60,6 +60,33 @@ export const SwipeHubScreen: React.FC<SwipeHubScreenProps> = ({
     setActiveScreenIndex(0);
   }, []);
 
+  // Keyboard accessibility: Left/Right arrows for screens, Escape to dismiss modals
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showSelfChecks) setShowSelfChecks(false);
+        if (showBriefAlignment) setShowBriefAlignment(false);
+        if (showAiSolverModal) setShowAiSolverModal(false);
+        return;
+      }
+
+      // Ignore arrows if typing in form controls
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+
+      if (e.key === 'ArrowLeft') {
+        goToPrevious();
+      } else if (e.key === 'ArrowRight') {
+        goToNext();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeScreenIndex, showSelfChecks, showBriefAlignment, showAiSolverModal]);
+
   const totalScreens = SHARED_SCREENS.length;
   const currentScreen = SHARED_SCREENS[activeScreenIndex] || SHARED_SCREENS[0];
   const nextScreen = activeScreenIndex < totalScreens - 1 ? SHARED_SCREENS[activeScreenIndex + 1] : null;
@@ -344,6 +371,17 @@ export const SwipeHubScreen: React.FC<SwipeHubScreenProps> = ({
         onClose={() => setShowAiSolverModal(false)}
         scenarios={scenarios}
         onResolveScenario={resolveScenario}
+        onResolveAllScenarios={() => {
+          scenarios.forEach((s) => resolveScenario(s.id));
+        }}
+        onRunCustomSimulation={async () => null}
+        eventData={eventData}
+        activeScreenIndex={activeScreenIndex}
+        onJumpToScreen={(idx) => {
+          setActiveScreenIndex(idx);
+          setShowAiSolverModal(false);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
       />
     </div>
   );

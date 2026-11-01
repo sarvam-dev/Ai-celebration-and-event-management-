@@ -95,7 +95,12 @@ export const BriefAlignmentModal: React.FC<BriefAlignmentModalProps> = ({ isOpen
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div 
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="brief-alignment-title"
+    >
       <div className="bg-[#181310] border border-[#2E241E] rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="p-5 bg-[#140F0D] border-b border-[#2E241E] flex items-center justify-between">
@@ -104,7 +109,7 @@ export const BriefAlignmentModal: React.FC<BriefAlignmentModalProps> = ({ isOpen
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-stone-100">How This App Meets the Brief</h2>
+              <h2 id="brief-alignment-title" className="text-lg font-bold text-stone-100">How This App Meets the Brief</h2>
               <p className="text-xs text-stone-400 mt-0.5">
                 Traceability matrix mapping user specifications and acceptance criteria to app architecture.
               </p>

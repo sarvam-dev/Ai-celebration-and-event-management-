@@ -108,7 +108,12 @@ export const AIProblemSolverModal: React.FC<AIProblemSolverModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md overflow-hidden">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md overflow-hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ai-problem-solver-title"
+    >
       <motion.div
         initial={{ opacity: 0, scale: 0.96, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -123,7 +128,7 @@ export const AIProblemSolverModal: React.FC<AIProblemSolverModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
+                <h2 id="ai-problem-solver-title" className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
                   <span>AI Logical Thinking & Problem Solver Engine</span>
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#D96B27]/20 text-[#FF7A3D] border border-[#D96B27]/40">
                     Gemini 3.8 Flash Active

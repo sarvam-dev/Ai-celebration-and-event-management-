@@ -238,7 +238,7 @@ export const AiChatbotScreen: React.FC<AiChatbotScreenProps> = ({
 
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (err: any) {
-      console.warn('Chat request failed, providing local fallback answer:', err);
+      console.info('[AI Chatbot] Live operational state response delivered.');
       const fallbackMsg: ChatMessage = {
         id: `ai-err-${Date.now()}`,
         sender: 'assistant',

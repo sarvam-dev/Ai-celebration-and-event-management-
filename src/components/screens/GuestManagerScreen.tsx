@@ -15,12 +15,19 @@ import {
   Sliders,
   Utensils,
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  Layers,
+  Camera,
+  Share2,
+  Maximize2
 } from 'lucide-react';
 import { useEvent } from '../../context/EventContext';
 import { ScreenHeader } from '../shared/ScreenHeader';
 import { ScreenAISolverWidget } from '../ScreenAISolverWidget';
 import { GuestRecord } from '../../types';
+import { FloorPlanStudio } from '../venue/FloorPlanStudio';
+import { DoorScannerSimulator } from '../guests/DoorScannerSimulator';
+import { DigitalInvitationModal } from '../guests/DigitalInvitationModal';
 
 export const GuestManagerScreen: React.FC = () => {
   const { 
@@ -53,6 +60,9 @@ export const GuestManagerScreen: React.FC = () => {
   const [newTier, setNewTier] = useState('Standard');
   const [newTable, setNewTable] = useState('Table 06 (Patrons)');
   const [newDiet, setNewDiet] = useState('Standard Executive');
+  const [activeViewTab, setActiveViewTab] = useState<'roster' | 'floorplan' | 'scanner'>('roster');
+  const [showInvitationModal, setShowInvitationModal] = useState(false);
+  const [invitationGuest, setInvitationGuest] = useState<GuestRecord | null>(null);
 
   const scenario3 = scenarios.find((s) => s.screenTarget === 3);
 
@@ -153,8 +163,62 @@ export const GuestManagerScreen: React.FC = () => {
           />
         )}
 
-        {/* 4. Turnstile Mathematical Queue Intelligence Card */}
-        <div className="bg-[#181310] border border-[#2E241E] rounded-xl p-5 sm:p-6 shadow-lg">
+        {/* Navigation Sub-Tabs */}
+        <div className="flex flex-wrap items-center justify-between gap-3 p-2 rounded-xl bg-[#181310] border border-[#2E241E]">
+          <div className="flex items-center gap-1.5 overflow-x-auto">
+            <button
+              onClick={() => setActiveViewTab('roster')}
+              className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer ${
+                activeViewTab === 'roster'
+                  ? 'bg-[#D96B27] text-white shadow-md'
+                  : 'bg-[#140F0D] text-stone-400 hover:text-stone-200 border border-[#241B16]'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span>Guest Roster & Ingress Math</span>
+            </button>
+
+            <button
+              onClick={() => setActiveViewTab('floorplan')}
+              className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer ${
+                activeViewTab === 'floorplan'
+                  ? 'bg-[#D96B27] text-white shadow-md'
+                  : 'bg-[#140F0D] text-stone-400 hover:text-stone-200 border border-[#241B16]'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              <span>2D Spatial Floor Plan & Seating Studio</span>
+            </button>
+
+            <button
+              onClick={() => setActiveViewTab('scanner')}
+              className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer ${
+                activeViewTab === 'scanner'
+                  ? 'bg-[#D96B27] text-white shadow-md'
+                  : 'bg-[#140F0D] text-stone-400 hover:text-stone-200 border border-[#241B16]'
+              }`}
+            >
+              <Camera className="w-4 h-4" />
+              <span>Turnstile Door Scanner & Simulator</span>
+            </button>
+          </div>
+
+          <button
+            onClick={() => {
+              setInvitationGuest(guestList[0] || null);
+              setShowInvitationModal(true);
+            }}
+            className="px-3.5 py-2 rounded-lg bg-[#27170E] hover:bg-[#341F13] border border-[#D96B27]/40 text-[#FF7A3D] text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Preview VIP Digital Invitation</span>
+          </button>
+        </div>
+
+        {activeViewTab === 'roster' && (
+          <>
+            {/* 4. Turnstile Mathematical Queue Intelligence Card */}
+            <div className="bg-[#181310] border border-[#2E241E] rounded-xl p-5 sm:p-6 shadow-lg">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-5 border-b border-[#2E241E]">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -383,6 +447,17 @@ export const GuestManagerScreen: React.FC = () => {
                       </select>
 
                       <button
+                        onClick={() => {
+                          setInvitationGuest(guest);
+                          setShowInvitationModal(true);
+                        }}
+                        className="p-1 text-stone-400 hover:text-[#FF7A3D] transition-colors"
+                        title="View VIP Digital Invitation Pass"
+                      >
+                        <QrCode className="w-3.5 h-3.5" />
+                      </button>
+
+                      <button
                         onClick={() => removeGuest(guest.id)}
                         className="p-1 text-stone-500 hover:text-rose-400 transition-colors"
                         title="Remove guest"
@@ -396,6 +471,14 @@ export const GuestManagerScreen: React.FC = () => {
             })}
           </div>
         </div>
+        </>
+        )}
+
+        {/* 2D Spatial Floor Plan & Seating Studio Tab */}
+        {activeViewTab === 'floorplan' && <FloorPlanStudio />}
+
+        {/* Turnstile Door Scanner & Simulator Tab */}
+        {activeViewTab === 'scanner' && <DoorScannerSimulator />}
 
         {/* Modal: Add Guest */}
         {showAddModal && (
@@ -466,6 +549,13 @@ export const GuestManagerScreen: React.FC = () => {
             </div>
           </div>
         )}
+        
+        {/* VIP Digital Invitation Modal */}
+        <DigitalInvitationModal
+          isOpen={showInvitationModal}
+          onClose={() => setShowInvitationModal(false)}
+          guest={invitationGuest}
+        />
       </div>
     </div>
   );

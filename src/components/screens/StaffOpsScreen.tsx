@@ -11,13 +11,16 @@ import {
   Sparkles, 
   ArrowRight,
   Activity,
-  UserCheck
+  UserCheck,
+  ListChecks,
+  Zap
 } from 'lucide-react';
 import { useEvent } from '../../context/EventContext';
 import { ScreenHeader } from '../shared/ScreenHeader';
 import { ScreenAISolverWidget } from '../ScreenAISolverWidget';
 import { StaffRecord } from '../../types';
 import { isStaffFatigued } from '../../utils/calculations';
+import { RunOfShowCueSheet } from '../staff/RunOfShowCueSheet';
 
 export const StaffOpsScreen: React.FC = () => {
   const { 
@@ -31,6 +34,7 @@ export const StaffOpsScreen: React.FC = () => {
     setActiveScreenIndex 
   } = useEvent();
 
+  const [activeStaffTab, setActiveStaffTab] = useState<'roster' | 'runofshow'>('roster');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newName, setNewName] = useState('');
   const [newRole, setNewRole] = useState('');
@@ -128,38 +132,67 @@ export const StaffOpsScreen: React.FC = () => {
           />
         )}
 
-        {/* Fatigue Warning Banner if fatigue is active */}
-        {shiftHealth.fatiguedCount > 0 && (
-          <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-200">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="w-6 h-6 text-amber-400 shrink-0" />
-              <div>
-                <div className="text-sm font-bold">
-                  Fatigue Warning Active: {shiftHealth.fatiguedCount} staff members scheduled ≥12 hours without handover
+        {/* Staff Ops Sub-Tabs */}
+        <div className="flex items-center gap-2 p-1.5 rounded-xl bg-[#181310] border border-[#2E241E]">
+          <button
+            onClick={() => setActiveStaffTab('roster')}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer ${
+              activeStaffTab === 'roster'
+                ? 'bg-[#D96B27] text-white shadow-md font-bold'
+                : 'text-stone-400 hover:text-stone-200 bg-[#120E0C] border border-[#2E241E]'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Crew Roster & Stations</span>
+          </button>
+
+          <button
+            onClick={() => setActiveStaffTab('runofshow')}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer ${
+              activeStaffTab === 'runofshow'
+                ? 'bg-[#D96B27] text-white shadow-md font-bold'
+                : 'text-stone-400 hover:text-stone-200 bg-[#120E0C] border border-[#2E241E]'
+            }`}
+          >
+            <Zap className="w-4 h-4" />
+            <span>Live Run-of-Show & Show Clock</span>
+          </button>
+        </div>
+
+        {activeStaffTab === 'roster' && (
+          <>
+            {/* Fatigue Warning Banner if fatigue is active */}
+            {shiftHealth.fatiguedCount > 0 && (
+              <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-200">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="w-6 h-6 text-amber-400 shrink-0" />
+                  <div>
+                    <div className="text-sm font-bold">
+                      Fatigue Warning Active: {shiftHealth.fatiguedCount} staff members scheduled ≥12 hours without handover
+                    </div>
+                    <div className="text-xs text-amber-300/80">
+                      Affecting: {shiftHealth.fatiguedNames.join(', ')}. Shift health score calibrated down to {shiftHealth.score}%.
+                    </div>
+                  </div>
                 </div>
-                <div className="text-xs text-amber-300/80">
-                  Affecting: {shiftHealth.fatiguedNames.join(', ')}. Shift health score calibrated down to {shiftHealth.score}%.
-                </div>
+
+                <button
+                  onClick={() => {
+                    shiftHealth.fatiguedNames.forEach((name) => {
+                      const staff = staffRoster.find((s) => s.name === name);
+                      if (staff) resolveStaffHandover(staff.id);
+                    });
+                  }}
+                  className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shrink-0 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Assign Deputy Handover to All</span>
+                </button>
               </div>
-            </div>
+            )}
 
-            <button
-              onClick={() => {
-                shiftHealth.fatiguedNames.forEach((name) => {
-                  const staff = staffRoster.find((s) => s.name === name);
-                  if (staff) resolveStaffHandover(staff.id);
-                });
-              }}
-              className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shrink-0 cursor-pointer"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Assign Deputy Handover to All</span>
-            </button>
-          </div>
-        )}
-
-        {/* 4. Staff Directory & Duty Matrix */}
-        <div className="bg-[#181310] border border-[#2E241E] rounded-xl p-5 sm:p-6 shadow-lg space-y-4">
+            {/* 4. Staff Directory & Duty Matrix */}
+            <div className="bg-[#181310] border border-[#2E241E] rounded-xl p-5 sm:p-6 shadow-lg space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-bold text-stone-100 flex items-center gap-2">
@@ -269,6 +302,11 @@ export const StaffOpsScreen: React.FC = () => {
             })}
           </div>
         </div>
+        </>
+        )}
+
+        {/* Live Run-of-Show & Show Clock Tab */}
+        {activeStaffTab === 'runofshow' && <RunOfShowCueSheet />}
 
         {/* Modal: Add Staff */}
         {showAddModal && (

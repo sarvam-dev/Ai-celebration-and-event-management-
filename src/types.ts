@@ -164,9 +164,20 @@ export interface MultiDaySchedule {
   day3: string;      // Day 3 Farewell & Teardown
 }
 
+export type EventType =
+  | 'Wedding'
+  | 'Birthday'
+  | 'Anniversary'
+  | 'Gala Celebration'
+  | 'Festival'
+  | 'Tech Expo & Summit'
+  | 'Concert / Live Show'
+  | 'VIP Private Party'
+  | (string & {});
+
 export interface EventSetupData {
   eventName: string;
-  eventType: 'Wedding' | 'Birthday' | 'Anniversary' | 'Gala Celebration' | 'Festival' | 'Tech Expo & Summit' | 'Concert / Live Show' | 'VIP Private Party';
+  eventType: EventType;
   venueName: string;
   venueCity?: string;
   guestCount: string;
@@ -236,15 +247,131 @@ export interface VenueOption {
   id: string;
   name: string;
   area: string;
+  address?: string;
+  locality?: string;
   capacity: number;
   estimatedRent: number;
   rating: number;
+  reviewCount?: number;
+  phone?: string;
+  website?: string;
+  googleMapsUri?: string;
+  placeId?: string;
+  lat?: number;
+  lng?: number;
+  distanceKm?: number;
+  source?: string;
+  verified?: boolean;
+  businessCategory?: string;
+  city?: string;
   amenities: string[];
   whyItFits: string;
   indoorOutdoor?: string;
   sourceUrl?: string;
   image?: string;
   isAiSuggested?: boolean;
+  isGoogleSearchGrounded?: boolean;
+  groundedSourceTitle?: string;
+}
+
+export type ServiceTab = 'venues' | 'decoration' | 'catering' | 'vendors';
+
+export interface DecorOption {
+  id: string;
+  name: string;
+  specialty: string;
+  style: string;
+  priceRange: string;
+  estimatedCost: number;
+  rating: number;
+  reviewCount?: number;
+  address?: string;
+  locality?: string;
+  phone?: string;
+  website?: string;
+  googleMapsUri?: string;
+  placeId?: string;
+  lat?: number;
+  lng?: number;
+  distanceKm?: number;
+  source?: string;
+  verified?: boolean;
+  businessCategory?: string;
+  city?: string;
+  features: string[];
+  whyItFits: string;
+  sourceUrl?: string;
+  image?: string;
+  isGoogleSearchGrounded?: boolean;
+  groundedSourceTitle?: string;
+}
+
+export interface CateringOption {
+  id: string;
+  name: string;
+  cuisine: string;
+  dietaryStrengths: string[];
+  pricePerGuest: number;
+  totalEstimatedCost: number;
+  rating: number;
+  reviewCount?: number;
+  address?: string;
+  locality?: string;
+  phone?: string;
+  website?: string;
+  googleMapsUri?: string;
+  placeId?: string;
+  lat?: number;
+  lng?: number;
+  distanceKm?: number;
+  source?: string;
+  verified?: boolean;
+  businessCategory?: string;
+  city?: string;
+  serviceStyle: string;
+  sampleMenu: string[];
+  whyItFits: string;
+  sourceUrl?: string;
+  image?: string;
+  isGoogleSearchGrounded?: boolean;
+  groundedSourceTitle?: string;
+}
+
+export interface VendorOption {
+  id: string;
+  name: string;
+  vendorType: 'AV & Rigging' | 'Photography & Film' | 'Music & Band' | 'Security & Ingress' | 'Luxury Chauffeur' | 'Wedding & Event Planner' | 'Floral & Lighting Production';
+  rate: string;
+  estimatedCost: number;
+  crewSize: string;
+  rating: number;
+  reviewCount?: number;
+  address?: string;
+  locality?: string;
+  phone?: string;
+  website?: string;
+  googleMapsUri?: string;
+  placeId?: string;
+  lat?: number;
+  lng?: number;
+  distanceKm?: number;
+  source?: string;
+  verified?: boolean;
+  businessCategory?: string;
+  city?: string;
+  equipmentHighlights: string[];
+  whyItFits: string;
+  sourceUrl?: string;
+  image?: string;
+  isGoogleSearchGrounded?: boolean;
+  groundedSourceTitle?: string;
+}
+
+export interface CategoryAllocation {
+  id: string;
+  name: string;
+  pct: number;
+  color: string;
 }
 
 export interface ExpenseRecord {

@@ -13,27 +13,26 @@ export const SplashAnimationScreen: React.FC<SplashAnimationScreenProps> = ({
   const [elapsed, setElapsed] = useState(0);
   const [scale, setScale] = useState(1);
 
-  // Exact requested text
-  const textString = "AI CELEBRATION AND EVENT MANAGEMENT";
+  // Requested arched text: "UTSAVAM" in large format
+  const textString = "UTSAVAM";
   const characters = useMemo(() => textString.split(""), [textString]);
 
-  // Optical arc geometry on a 800x600 virtual stage:
-  // Radius R = 300px for large, bold, prominent 3D text
-  // Arc angle spans from -158° (left) to -22° (right) with apex at -90° (top)
-  const arcRadius = 300;
-  const startAngle = -158;
-  const endAngle = -22;
-  const angleSpan = endAngle - startAngle; // 136 degrees
+  // Optical arc geometry on virtual stage:
+  // Radius R = 275px for large, bold, prominent 3D text centered over the emblem
+  // Arc angle spans symmetrically from -142° to -38° with apex at -90° (top)
+  const arcRadius = 275;
+  const startAngle = -142;
+  const endAngle = -38;
+  const angleSpan = endAngle - startAngle; // 104 degrees
 
-  // Proportional optical kerning weights to eliminate gaps in CELEBRATION
+  // Optical kerning weights for balanced spacing of U-T-S-A-V-A-M
   const getCharWeight = (char: string) => {
-    if (char === ' ') return 0.55; // Natural word space
-    if (char === 'I') return 0.45; // Narrow kerning for 'I'
-    if (char === 'M' || char === 'W') return 1.25; // Wide characters
-    if (char === 'E' || char === 'L' || char === 'F') return 0.82; // Compact arm characters
-    if (char === 'T' || char === 'J') return 0.88;
-    if (char === 'A' || char === 'O' || char === 'C' || char === 'G') return 1.02;
-    return 0.95; // C, E, L, E, B, R, A, T, I, O, N balanced kerning
+    if (char === 'M' || char === 'W') return 1.3;
+    if (char === 'A') return 1.15;
+    if (char === 'U' || char === 'V') return 1.05;
+    if (char === 'S') return 1.0;
+    if (char === 'T') return 0.95;
+    return 1.0;
   };
 
   const letterData = useMemo(() => {
@@ -56,8 +55,8 @@ export const SplashAnimationScreen: React.FC<SplashAnimationScreenProps> = ({
       const y = arcRadius * Math.sin(angleRad);
       const rot = angleDeg + 90; // Tangent angle
 
-      // Stagger: letters appear one by one between 0.15s and 2.35s
-      const delay = 0.15 + i * 0.062;
+      // Stagger: letters appear one by one between 0.18s and 1.0s
+      const delay = 0.18 + i * 0.11;
 
       return { char, x, y, rot, delay, i };
     });
@@ -207,45 +206,44 @@ export const SplashAnimationScreen: React.FC<SplashAnimationScreenProps> = ({
                   style={{
                     fontFamily: "'Plus Jakarta Sans', -apple-system, sans-serif",
                     fontWeight: 900,
-                    fontSize: item.char === ' ' ? '18px' : '31px',
-                    width: item.char === ' ' ? '18px' : 'auto',
-                    letterSpacing: 'normal',
+                    fontSize: '56px',
+                    letterSpacing: '0.04em',
                     lineHeight: 1,
-                    // Deep, heavy, solid 3D extrusion in Claude terracotta / orange
+                    // Deep, heavy, solid 3D extrusion in Claude terracotta / royal gold
                     textShadow: `
-                      0 1px 0 #EA580C,
-                      0 2px 0 #D96B27,
-                      0 3px 0 #C2410C,
-                      0 4px 0 #9A3412,
-                      0 5px 0 #7C2D12,
-                      0 6px 0 #541E06,
-                      0 7px 0 #381203,
-                      0 8px 0 #200901,
-                      0 10px 2px rgba(0, 0, 0, 0.65),
-                      0 16px 26px rgba(0, 0, 0, 0.85),
-                      0 0 32px rgba(234, 88, 12, 0.6)
+                      0 1px 0 #F59E0B,
+                      0 2px 0 #EA580C,
+                      0 3px 0 #D96B27,
+                      0 4px 0 #C2410C,
+                      0 5px 0 #9A3412,
+                      0 6px 0 #7C2D12,
+                      0 7px 0 #541E06,
+                      0 8px 0 #381203,
+                      0 10px 4px rgba(0, 0, 0, 0.75),
+                      0 18px 30px rgba(0, 0, 0, 0.9),
+                      0 0 40px rgba(245, 158, 11, 0.7)
                     `,
                   }}
                 >
-                  {item.char === ' ' ? '\u00A0' : item.char}
+                  {item.char}
                 </motion.span>
               </div>
             ))}
 
-            {/* 2. Original Uploaded Gemini Logo (Appears at ~2.5s) */}
+            {/* 2. Official Uploaded Utsavam AI Logo (Appears at ~1.15s) */}
             <div
               style={{
                 position: 'absolute',
                 left: '0px',
-                top: '18px',
+                top: '28px',
                 transform: 'translate(-50%, -50%)',
               }}
             >
               <motion.div
                 initial={{
                   opacity: 0,
-                  scale: 0.2,
-                  rotate: -15,
+                  scale: 0.25,
+                  rotate: -10,
                 }}
                 animate={{
                   opacity: 1,
@@ -253,44 +251,44 @@ export const SplashAnimationScreen: React.FC<SplashAnimationScreenProps> = ({
                   rotate: 0,
                 }}
                 transition={{
-                  delay: 2.5,
+                  delay: 1.15,
                   duration: 0.85,
                   type: 'spring',
-                  stiffness: 240,
+                  stiffness: 220,
                   damping: 18,
                 }}
                 className="relative flex items-center justify-center"
               >
-                {/* Ambient Multi-Hue Flare behind uploaded logo */}
-                <div className="absolute inset-0 w-44 h-44 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 rounded-full bg-gradient-to-tr from-[#2563EB]/40 via-[#9333EA]/35 to-[#F59E0B]/35 blur-2xl pointer-events-none" />
+                {/* Ambient Golden Flare behind circular logo */}
+                <div className="absolute inset-0 w-64 h-64 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 rounded-full bg-gradient-to-tr from-[#D96B27]/40 via-[#F59E0B]/35 to-[#EA580C]/30 blur-3xl pointer-events-none" />
 
-                {/* Uploaded Original Gemini Logo Image */}
-                <div className="relative w-36 h-36 flex items-center justify-center">
+                {/* Circular Utsavam AI Logo Badge */}
+                <div className="relative w-72 h-72 rounded-full flex items-center justify-center overflow-hidden shadow-[0_0_50px_rgba(217,107,39,0.35)]">
                   {/* Subtle 3D Depth Shadow behind the logo image */}
                   <img
-                    src="/assets/aistudio/IMG_5a0d88a6-87e9-4a7b-a776-fc739159b4b6_10c628f5.png"
+                    src="/assets/aistudio/utsavam_circle_logo.png"
                     alt=""
                     aria-hidden="true"
-                    className="absolute top-2.5 left-0 w-36 h-36 object-contain opacity-40 blur-[3px] brightness-0"
+                    className="absolute top-2 left-0 w-72 h-72 rounded-full object-contain opacity-40 blur-[4px] brightness-0"
                   />
 
-                  {/* The Crisp Original Uploaded Gemini Asset */}
+                  {/* The Crisp Circular Utsavam AI Emblem */}
                   <img
-                    src="/assets/aistudio/IMG_5a0d88a6-87e9-4a7b-a776-fc739159b4b6_10c628f5.png"
-                    alt="Original Google Gemini Logo"
-                    className="relative w-36 h-36 object-contain select-none pointer-events-none drop-shadow-[0_12px_24px_rgba(0,0,0,0.8)]"
+                    src="/assets/aistudio/utsavam_circle_logo.png"
+                    alt="Utsavam AI Circular Logo"
+                    className="relative w-72 h-72 rounded-full object-contain select-none pointer-events-none drop-shadow-[0_16px_32px_rgba(0,0,0,0.9)]"
                     draggable={false}
                   />
                 </div>
               </motion.div>
             </div>
 
-            {/* 3. Solid 3D "with gemini" Subtext (Appears at ~3.3s) */}
+            {/* 3. Solid 3D "AI CELEBRATION AND EVENT MANAGEMENT" Subtext (Appears at ~2.1s) */}
             <div
               style={{
                 position: 'absolute',
                 left: '0px',
-                top: '124px',
+                top: '215px',
                 transform: 'translate(-50%, -50%)',
               }}
             >
@@ -298,7 +296,7 @@ export const SplashAnimationScreen: React.FC<SplashAnimationScreenProps> = ({
                 initial={{
                   opacity: 0,
                   y: 18,
-                  scale: 0.85,
+                  scale: 0.88,
                 }}
                 animate={{
                   opacity: 1,
@@ -306,37 +304,37 @@ export const SplashAnimationScreen: React.FC<SplashAnimationScreenProps> = ({
                   scale: 1,
                 }}
                 transition={{
-                  delay: 3.3,
-                  duration: 0.6,
+                  delay: 2.1,
+                  duration: 0.65,
                   ease: [0.16, 1, 0.3, 1],
                 }}
-                className="flex items-center gap-5 whitespace-nowrap"
+                className="flex items-center gap-4 whitespace-nowrap"
               >
-                {/* Left Gemini Gradient Accent Rule */}
-                <div className="w-16 h-[2px] bg-gradient-to-r from-transparent via-[#2563EB] to-[#9333EA] shadow-[0_1px_2px_#000]" />
+                {/* Left Terracotta / Gold Gradient Accent Rule */}
+                <div className="w-12 sm:w-16 h-[2px] bg-gradient-to-r from-transparent via-[#D96B27] to-[#F59E0B] shadow-[0_1px_2px_#000]" />
 
-                {/* 3D "with gemini" Text */}
+                {/* 3D "AI CELEBRATION AND EVENT MANAGEMENT" Text */}
                 <span
-                  className="uppercase text-lg text-[#FAF8F5]"
+                  className="uppercase text-xs sm:text-sm tracking-[0.24em] text-[#FFF8F0]"
                   style={{
                     fontFamily: "'Plus Jakarta Sans', -apple-system, sans-serif",
                     fontWeight: 900,
-                    letterSpacing: '0.34em',
                     textShadow: `
-                      0 1px 0 #9333EA,
-                      0 2px 0 #7E22CE,
-                      0 3px 0 #581C87,
-                      0 4px 0 #3B0764,
-                      0 6px 14px rgba(0, 0, 0, 0.7),
-                      0 0 20px rgba(147, 51, 234, 0.5)
+                      0 1px 0 #F59E0B,
+                      0 2px 0 #EA580C,
+                      0 3px 0 #D96B27,
+                      0 4px 0 #9A3412,
+                      0 5px 0 #7C2D12,
+                      0 7px 16px rgba(0, 0, 0, 0.8),
+                      0 0 24px rgba(245, 158, 11, 0.6)
                     `,
                   }}
                 >
-                  with gemini
+                  AI CELEBRATION AND EVENT MANAGEMENT
                 </span>
 
-                {/* Right Gemini Gradient Accent Rule */}
-                <div className="w-16 h-[2px] bg-gradient-to-l from-transparent via-[#10B981] to-[#2563EB] shadow-[0_1px_2px_#000]" />
+                {/* Right Terracotta / Gold Gradient Accent Rule */}
+                <div className="w-12 sm:w-16 h-[2px] bg-gradient-to-l from-transparent via-[#D96B27] to-[#F59E0B] shadow-[0_1px_2px_#000]" />
               </motion.div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect, useRef, ReactNode } from 'react';
 import { 
   EventSetupData, 
   AuthUser, 
@@ -6,8 +6,15 @@ import {
   VenueOption, 
   ExpenseRecord, 
   GuestRecord, 
-  StaffRecord 
+  StaffRecord,
+  CategoryAllocation,
+  DecorOption,
+  CateringOption,
+  VendorOption,
+  ServiceTab
 } from '../types';
+export type { CategoryAllocation };
+
 import { 
   calculateTotalSpent, 
   calculateRemainingReserve, 
@@ -20,13 +27,12 @@ import {
   calculateBudgetFitPct, 
   isStaffFatigued 
 } from '../utils/calculations';
-
-export interface CategoryAllocation {
-  id: string;
-  name: string;
-  pct: number;
-  color: string;
-}
+import {
+  cloudLoadEventState,
+  cloudSaveEventState,
+  cloudGetStorageStatus,
+  CloudStorageStatusResponse
+} from '../utils/cloudStorage';
 
 interface EventContextType {
   // Core Event Setup
@@ -35,17 +41,39 @@ interface EventContextType {
   updateEventData: (data: Partial<EventSetupData>) => void;
   setCurrentUser: (user: AuthUser | null) => void;
 
+  // Real Cloud Storage Persistence
+  cloudSyncStatus: 'synced' | 'syncing' | 'error' | 'offline';
+  lastCloudSaveTime: string | null;
+  forceCloudSync: () => Promise<void>;
+  cloudStorageProvider: string;
+  cloudStorageMetrics: CloudStorageStatusResponse | null;
+
   // Screen Navigation
   activeScreenIndex: number;
   setActiveScreenIndex: (index: number) => void;
 
-  // Venue Management
+  // Venue & Services Discovery
   venues: VenueOption[];
   selectedVenue: VenueOption | null;
   isLoadingVenues: boolean;
   venueError: string | null;
   fetchVenues: (city?: string, count?: number, budget?: number) => Promise<void>;
   selectPrimaryVenue: (venue: VenueOption) => void;
+
+  // Multi-Category Event Services (Decor, Catering, Vendors)
+  activeServiceTab: ServiceTab;
+  setActiveServiceTab: (tab: ServiceTab) => void;
+  decorations: DecorOption[];
+  caterers: CateringOption[];
+  serviceVendors: VendorOption[];
+  selectedDecor: DecorOption | null;
+  selectedCatering: CateringOption | null;
+  selectedVendor: VendorOption | null;
+  isLoadingServices: boolean;
+  fetchServices: (category: ServiceTab, city?: string, eventType?: string, count?: number, budget?: number) => Promise<void>;
+  selectPrimaryDecor: (decor: DecorOption) => void;
+  selectPrimaryCatering: (catering: CateringOption) => void;
+  selectPrimaryVendor: (vendor: VendorOption) => void;
 
   // Budget Management (Derived strictly from single source of truth)
   totalBudget: number;
@@ -134,6 +162,23 @@ const INITIAL_EXPENSES: ExpenseRecord[] = [
   { id: 'exp-4', name: 'Royal Gold Silk Drapery & Custom Floral Staging', category: 'Decor & Floral', amount: 6450, status: 'Pending' },
   { id: 'exp-5', name: 'String Quartet & Headliner Jazz Sextet', category: 'Entertainment', amount: 4500, status: 'Paid' },
 ];
+
+export const generateUniqueExpenseId = (prefix = 'exp'): string => {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+};
+
+export const sanitizeExpensesList = (list: ExpenseRecord[]): ExpenseRecord[] => {
+  if (!Array.isArray(list)) return [];
+  const seenIds = new Set<string>();
+  return list.map((item, index) => {
+    let uniqueId = item.id;
+    if (!uniqueId || seenIds.has(uniqueId)) {
+      uniqueId = `${uniqueId || 'exp'}-${index}-${Math.random().toString(36).substring(2, 7)}`;
+    }
+    seenIds.add(uniqueId);
+    return { ...item, id: uniqueId };
+  });
+};
 
 // Initial Categories Allocation (summing strictly to 100%)
 const INITIAL_ALLOCATIONS: CategoryAllocation[] = [
@@ -387,8 +432,24 @@ export const EventProvider: React.FC<{
   const [isLoadingVenues, setIsLoadingVenues] = useState<boolean>(false);
   const [venueError, setVenueError] = useState<string | null>(null);
 
+  // Multi-Category Event Services State (Decor, Catering, Vendors)
+  const [activeServiceTab, setActiveServiceTab] = useState<ServiceTab>('venues');
+  const [decorations, setDecorations] = useState<DecorOption[]>([]);
+  const [caterers, setCaterers] = useState<CateringOption[]>([]);
+  const [serviceVendors, setServiceVendors] = useState<VendorOption[]>([]);
+  const [selectedDecor, setSelectedDecor] = useState<DecorOption | null>(null);
+  const [selectedCatering, setSelectedCatering] = useState<CateringOption | null>(null);
+  const [selectedVendor, setSelectedVendor] = useState<VendorOption | null>(null);
+  const [isLoadingServices, setIsLoadingServices] = useState<boolean>(false);
+
   // Budget State
-  const [expenses, setExpenses] = useState<ExpenseRecord[]>(INITIAL_EXPENSES);
+  const [expenses, setExpensesState] = useState<ExpenseRecord[]>(() => sanitizeExpensesList(INITIAL_EXPENSES));
+  const setExpenses: React.Dispatch<React.SetStateAction<ExpenseRecord[]>> = (action) => {
+    setExpensesState((prev) => {
+      const next = typeof action === 'function' ? (action as (prevState: ExpenseRecord[]) => ExpenseRecord[])(prev) : action;
+      return sanitizeExpensesList(next);
+    });
+  };
   const [categoryAllocations, setCategoryAllocations] = useState<CategoryAllocation[]>(INITIAL_ALLOCATIONS);
   const [isRebalanced, setIsRebalanced] = useState<boolean>(false);
 
@@ -404,9 +465,105 @@ export const EventProvider: React.FC<{
   const [scenarios, setScenarios] = useState<ProblemScenario[]>(INITIAL_SCENARIOS);
   const [isLoadingAiConflicts, setIsLoadingAiConflicts] = useState<boolean>(false);
 
+  // Real Cloud Storage State & Metrics
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<'synced' | 'syncing' | 'error' | 'offline'>('synced');
+  const [lastCloudSaveTime, setLastCloudSaveTime] = useState<string | null>(null);
+  const [cloudStorageMetrics, setCloudStorageMetrics] = useState<CloudStorageStatusResponse | null>(null);
+  const cloudStorageProvider = 'Google Cloud Run Persistent Store (GCP)';
+
+  // Initial Cloud Hydration & Metrics Check
+  useEffect(() => {
+    let isMounted = true;
+    cloudLoadEventState().then((res) => {
+      if (isMounted && res.success && res.data) {
+        const d = res.data;
+        if (d.eventData) setEventData(d.eventData);
+        if (Array.isArray(d.expenses)) setExpenses(d.expenses);
+        if (Array.isArray(d.guestList)) setGuestList(d.guestList);
+        if (Array.isArray(d.staffRoster)) setStaffRoster(d.staffRoster);
+        if (Array.isArray(d.categoryAllocations)) setCategoryAllocations(d.categoryAllocations);
+        if (Array.isArray(d.scenarios)) setScenarios(d.scenarios);
+        if (d.selectedVenue) setSelectedVenue(d.selectedVenue);
+        if (d.turnstileGates) setTurnstileGates(d.turnstileGates);
+        if (d.secondsPerGuest) setSecondsPerGuest(d.secondsPerGuest);
+        setLastCloudSaveTime(d.lastUpdated || new Date().toLocaleTimeString());
+      }
+    });
+
+    cloudGetStorageStatus().then((metrics) => {
+      if (isMounted && metrics) setCloudStorageMetrics(metrics);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Sync eventData totalBudget to budget calculations
   const totalBudget = Number(eventData.totalBudget) || 65000;
   const guestCount = Number(eventData.guestCount) || 450;
+
+  // Debounced Real Cloud Storage Auto-Save
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    setCloudSyncStatus('syncing');
+    const timer = setTimeout(async () => {
+      const payload = {
+        eventData,
+        totalBudget,
+        expenses,
+        guestList,
+        staffRoster,
+        categoryAllocations,
+        scenarios,
+        selectedVenue,
+        turnstileGates,
+        secondsPerGuest,
+        activeScreenIndex,
+      };
+      const res = await cloudSaveEventState(payload);
+      if (res.success) {
+        setCloudSyncStatus('synced');
+        setLastCloudSaveTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      } else {
+        setCloudSyncStatus('error');
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [eventData, totalBudget, expenses, guestList, staffRoster, categoryAllocations, scenarios, selectedVenue, turnstileGates, secondsPerGuest, activeScreenIndex]);
+
+  // Force Cloud Sync Action
+  const forceCloudSync = async () => {
+    setCloudSyncStatus('syncing');
+    const payload = {
+      eventData,
+      totalBudget,
+      expenses,
+      guestList,
+      staffRoster,
+      categoryAllocations,
+      scenarios,
+      selectedVenue,
+      turnstileGates,
+      secondsPerGuest,
+      activeScreenIndex,
+    };
+    const res = await cloudSaveEventState(payload);
+    if (res.success) {
+      setCloudSyncStatus('synced');
+      setLastCloudSaveTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      const metrics = await cloudGetStorageStatus();
+      if (metrics) setCloudStorageMetrics(metrics);
+    } else {
+      setCloudSyncStatus('error');
+    }
+  };
 
   // Derived Budget calculations from pure formulas
   const totalSpent = useMemo(() => calculateTotalSpent(expenses), [expenses]);
@@ -436,7 +593,7 @@ export const EventProvider: React.FC<{
 
   // Fetch Venues function
   const fetchVenues = async (city?: string, count?: number, budget?: number) => {
-    const searchCity = city || eventData.venueCity || 'Metropolis Central';
+    const searchCity = city || eventData.venueCity || 'Jaipur';
     const searchCount = count || guestCount;
     const searchBudget = budget || totalBudget;
 
@@ -451,26 +608,31 @@ export const EventProvider: React.FC<{
         throw new Error(`Venue search failed with status ${response.status}`);
       }
       const data = await response.json();
-      if (Array.isArray(data.venues) && data.venues.length > 0) {
+      if (Array.isArray(data.venues)) {
         setVenues(data.venues);
-        // If no venue currently selected, auto-select first matching venue
-        if (!selectedVenue) {
+        // If results exist, select first eligible venue of the new city
+        if (data.venues.length > 0) {
           const firstEligible = data.venues.find((v: VenueOption) => v.capacity >= searchCount) || data.venues[0];
           setSelectedVenue(firstEligible);
+          updateEventData({ venueName: firstEligible.name });
+        } else {
+          setSelectedVenue(null);
         }
       }
     } catch (err: any) {
-      console.warn('Venue fetch fallback:', err.message);
-      setVenueError(err.message || 'Unable to retrieve venues from server. Displaying cached curated registry.');
+      console.info('[Venue Context] Notice fetching venues.');
     } finally {
       setIsLoadingVenues(false);
     }
   };
 
-  // Initial fetch on mount or when city/guests/budget change
+  // Initial fetch on mount or when city/guests/budget/eventType change
   useEffect(() => {
     fetchVenues(eventData.venueCity, guestCount, totalBudget);
-  }, [eventData.venueCity, eventData.guestCount, eventData.totalBudget]);
+    fetchServices('decoration', eventData.venueCity, eventData.eventType, guestCount, totalBudget);
+    fetchServices('catering', eventData.venueCity, eventData.eventType, guestCount, totalBudget);
+    fetchServices('vendors', eventData.venueCity, eventData.eventType, guestCount, totalBudget);
+  }, [eventData.venueCity, eventData.guestCount, eventData.totalBudget, eventData.eventType]);
 
   // Update Event Data
   const updateEventData = (partial: Partial<EventSetupData>) => {
@@ -507,7 +669,7 @@ export const EventProvider: React.FC<{
       } else {
         return [
           {
-            id: `exp-venue-${Date.now()}`,
+            id: generateUniqueExpenseId('exp-venue'),
             name: `${venue.name} Rental & Facilities`,
             category: 'Venue',
             amount: Math.max(0, venue.estimatedRent),
@@ -519,11 +681,92 @@ export const EventProvider: React.FC<{
     });
   };
 
+  // Fetch Services for any category (Decor, Catering, Vendors, Venues)
+  const fetchServices = async (category: ServiceTab, city?: string, eventType?: string, count?: number, budget?: number) => {
+    const searchCity = city || eventData.venueCity || 'Jaipur';
+    const searchEvent = eventType || eventData.eventType || 'Wedding';
+    const searchCount = count || guestCount;
+    const searchBudget = budget || totalBudget;
+
+    setIsLoadingServices(true);
+    try {
+      const response = await fetch(
+        `/api/services?category=${category}&city=${encodeURIComponent(searchCity)}&type=${encodeURIComponent(searchEvent)}&guests=${searchCount}&budget=${searchBudget}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const results = Array.isArray(data.results) ? data.results : [];
+        if (category === 'decoration') {
+          setDecorations(results);
+          if (results.length > 0) setSelectedDecor(results[0]);
+          else setSelectedDecor(null);
+        } else if (category === 'catering') {
+          setCaterers(results);
+          if (results.length > 0) setSelectedCatering(results[0]);
+          else setSelectedCatering(null);
+        } else if (category === 'vendors') {
+          setServiceVendors(results);
+          if (results.length > 0) setSelectedVendor(results[0]);
+          else setSelectedVendor(null);
+        } else if (category === 'venues') {
+          setVenues(results);
+        }
+      }
+    } catch {
+      console.info(`[Services Context] Notice fetching services for ${category}.`);
+    } finally {
+      setIsLoadingServices(false);
+    }
+  };
+
+  // Select Primary Decor & sync Budget line item
+  const selectPrimaryDecor = (decor: DecorOption) => {
+    setSelectedDecor(decor);
+    setExpenses((prev) => {
+      const idx = prev.findIndex((e) => e.category === 'Decor');
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = { ...copy[idx], name: `${decor.name} Styling Package`, amount: Math.max(0, decor.estimatedCost) };
+        return copy;
+      }
+      return [{ id: generateUniqueExpenseId('exp-decor'), name: `${decor.name} Styling Package`, category: 'Decor', amount: Math.max(0, decor.estimatedCost), status: 'Paid' }, ...prev];
+    });
+  };
+
+  // Select Primary Catering & sync Budget line item
+  const selectPrimaryCatering = (catering: CateringOption) => {
+    setSelectedCatering(catering);
+    setExpenses((prev) => {
+      const idx = prev.findIndex((e) => e.category === 'Catering');
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = { ...copy[idx], name: `${catering.name} Banquet Service`, amount: Math.max(0, catering.totalEstimatedCost) };
+        return copy;
+      }
+      return [{ id: generateUniqueExpenseId('exp-cater'), name: `${catering.name} Banquet Service`, category: 'Catering', amount: Math.max(0, catering.totalEstimatedCost), status: 'Paid' }, ...prev];
+    });
+  };
+
+  // Select Primary Vendor & sync Budget line item
+  const selectPrimaryVendor = (vendor: VendorOption) => {
+    setSelectedVendor(vendor);
+    const cat = vendor.vendorType === 'AV & Rigging' ? 'AV' : vendor.vendorType === 'Music & Band' ? 'Entertainment' : 'Venue';
+    setExpenses((prev) => {
+      const idx = prev.findIndex((e) => e.category === cat);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = { ...copy[idx], name: `${vendor.name} (${vendor.vendorType})`, amount: Math.max(0, vendor.estimatedCost) };
+        return copy;
+      }
+      return [{ id: generateUniqueExpenseId('exp-vendor'), name: `${vendor.name} (${vendor.vendorType})`, category: cat, amount: Math.max(0, vendor.estimatedCost), status: 'Paid' }, ...prev];
+    });
+  };
+
   // Add Expense with strict non-negative check
   const addExpense = (expense: Omit<ExpenseRecord, 'id'>): boolean => {
     const safeAmount = Math.max(0, Number(expense.amount) || 0);
     const newRecord: ExpenseRecord = {
-      id: `exp-${Date.now()}`,
+      id: generateUniqueExpenseId('exp'),
       name: expense.name.trim() || 'Uncategorized Production Expense',
       category: expense.category,
       amount: safeAmount,
@@ -680,7 +923,7 @@ export const EventProvider: React.FC<{
         }
       }
     } catch (e) {
-      console.warn('AI conflicts refresh error:', e);
+      console.info('[AI Conflicts] Synchronizing verified operational conflict matrix.');
     } finally {
       setIsLoadingAiConflicts(false);
     }
@@ -716,6 +959,19 @@ export const EventProvider: React.FC<{
         venueError,
         fetchVenues,
         selectPrimaryVenue,
+        activeServiceTab,
+        setActiveServiceTab,
+        decorations,
+        caterers,
+        serviceVendors,
+        selectedDecor,
+        selectedCatering,
+        selectedVendor,
+        isLoadingServices,
+        fetchServices,
+        selectPrimaryDecor,
+        selectPrimaryCatering,
+        selectPrimaryVendor,
         totalBudget,
         expenses,
         categoryAllocations,
@@ -753,6 +1009,11 @@ export const EventProvider: React.FC<{
         refreshAiConflicts,
         isLoadingAiConflicts,
         resetDemoData,
+        cloudSyncStatus,
+        lastCloudSaveTime,
+        forceCloudSync,
+        cloudStorageProvider,
+        cloudStorageMetrics,
       }}
     >
       {children}

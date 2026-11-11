@@ -24,6 +24,7 @@ import { ScreenHeader } from '../shared/ScreenHeader';
 import { ScreenAISolverWidget } from '../ScreenAISolverWidget';
 import { PdfExportModal } from '../PdfExportModal';
 import { PdfExportData } from '../../utils/pdfExport';
+import { WeatherContingencyWidget } from '../dashboard/WeatherContingencyWidget';
 
 interface ChecklistItem {
   id: string;
@@ -266,6 +267,9 @@ export const DashboardScreen: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Live Weather Radar & Outdoor Contingency Plan B Simulator */}
+        <WeatherContingencyWidget />
 
         {/* 5. Master Preparation Checklist */}
         <div className="bg-[#181310] border border-[#2E241E] rounded-xl p-5 sm:p-6 shadow-lg space-y-4">

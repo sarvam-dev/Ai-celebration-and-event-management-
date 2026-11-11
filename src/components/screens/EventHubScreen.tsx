@@ -16,7 +16,13 @@ import {
   BookOpen,
   ClipboardCheck,
   Building,
-  Users
+  Users,
+  Cloud,
+  Database,
+  Lock,
+  RefreshCw,
+  KeyRound,
+  Server
 } from 'lucide-react';
 import { useEvent } from '../../context/EventContext';
 import { ScreenHeader } from '../shared/ScreenHeader';
@@ -48,8 +54,15 @@ export const EventHubScreen: React.FC<EventHubScreenProps> = ({
     resetDemoData, 
     scenarios, 
     resolveScenario, 
-    setActiveScreenIndex 
+    setActiveScreenIndex,
+    cloudSyncStatus,
+    lastCloudSaveTime,
+    forceCloudSync,
+    cloudStorageProvider,
+    cloudStorageMetrics,
   } = useEvent();
+
+  const [isSyncingManually, setIsSyncingManually] = useState(false);
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -272,6 +285,100 @@ export const EventHubScreen: React.FC<EventHubScreenProps> = ({
                   <span>Edit Setup Details</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Real Cloud Storage & Cryptographic Security Panel */}
+        <div className="bg-[#181310] border border-[#2E241E] rounded-xl p-5 sm:p-6 shadow-lg space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#281F1A] pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-orange-950/60 border border-[#D96B27]/40 flex items-center justify-center text-[#FF7A3D]">
+                <Cloud className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-bold text-stone-100">Real Cloud Storage & Enterprise Security</h2>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                    cloudSyncStatus === 'synced'
+                      ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-800/40'
+                      : cloudSyncStatus === 'syncing'
+                      ? 'bg-amber-950/90 text-amber-300 border border-amber-800/40'
+                      : 'bg-rose-950/90 text-rose-300 border border-rose-800/40'
+                  }`}>
+                    {cloudSyncStatus === 'synced' ? 'Live Synced' : cloudSyncStatus === 'syncing' ? 'Syncing...' : 'Sync Warning'}
+                  </span>
+                </div>
+                <p className="text-xs text-stone-400 mt-0.5">
+                  Server-side cloud persistence on Google Cloud Run replacing client localStorage.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={async () => {
+                setIsSyncingManually(true);
+                await forceCloudSync();
+                setTimeout(() => setIsSyncingManually(false), 800);
+              }}
+              disabled={isSyncingManually}
+              className="px-3.5 py-2 rounded-lg bg-[#221A15] hover:bg-[#2E241E] border border-[#3A2D24] text-xs font-semibold text-stone-200 flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-[#D96B27] ${isSyncingManually ? 'animate-spin' : ''}`} />
+              <span>{isSyncingManually ? 'Syncing Database...' : 'Force Cloud Sync'}</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="p-3.5 rounded-lg bg-[#140F0D] border border-[#2E241E] space-y-1">
+              <div className="flex items-center gap-2 text-stone-400 text-xs font-medium">
+                <Database className="w-4 h-4 text-[#D96B27]" />
+                <span>Cloud Provider</span>
+              </div>
+              <div className="text-xs font-mono font-semibold text-stone-200 truncate">
+                {cloudStorageProvider}
+              </div>
+              <div className="text-[11px] text-stone-400">
+                Persistent backend store: {cloudStorageMetrics?.storageType || 'Cloud Disk Store (cloud-store.json)'}
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-lg bg-[#140F0D] border border-[#2E241E] space-y-1">
+              <div className="flex items-center gap-2 text-stone-400 text-xs font-medium">
+                <KeyRound className="w-4 h-4 text-[#10B981]" />
+                <span>Cryptographic Security</span>
+              </div>
+              <div className="text-xs font-semibold text-emerald-400">
+                PBKDF2 + SHA-256 (10k Iterations)
+              </div>
+              <div className="text-[11px] text-stone-400">
+                Cryptographic 16-byte salt; zero plaintext credentials in browser.
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-lg bg-[#140F0D] border border-[#2E241E] space-y-1">
+              <div className="flex items-center gap-2 text-stone-400 text-xs font-medium">
+                <Server className="w-4 h-4 text-[#38BDF8]" />
+                <span>Last Cloud Sync</span>
+              </div>
+              <div className="text-xs font-mono font-semibold text-stone-200">
+                {lastCloudSaveTime || 'Pending synchronization'}
+              </div>
+              <div className="text-[11px] text-stone-400">
+                {cloudStorageMetrics?.totalUsers ?? 1} registered accounts · {cloudStorageMetrics?.storageSizeBytes ? `${Math.round(cloudStorageMetrics.storageSizeBytes / 1024)} KB` : 'Dynamic sync'}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-lg bg-[#140F0D]/80 border border-[#281F1A] flex flex-wrap items-center justify-between gap-2 text-[11px] text-stone-400">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1.5 text-stone-300">
+                <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                <span>HTTP Security Headers: nosniff, SAMEORIGIN, X-XSS-Protection</span>
+              </span>
+            </div>
+            <div className="text-stone-400">
+              Session Tokens: 64-char cryptographically random Bearer authorization
             </div>
           </div>
         </div>

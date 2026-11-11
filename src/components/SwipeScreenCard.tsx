@@ -404,7 +404,7 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
 
     setExpenses((prev) => [
       {
-        id: `exp-${Date.now()}`,
+        id: `exp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         name: newExpenseName.trim(),
         category: newExpenseCat,
         amount: amt,
@@ -1533,8 +1533,8 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
 
               {/* Expense Table */}
               <div className="divide-y divide-[#241D17]">
-                {expenses.map((item) => (
-                  <div key={item.id} className="py-3 flex items-center justify-between gap-3">
+                {expenses.map((item, idx) => (
+                  <div key={`${item.id}-${idx}`} className="py-3 flex items-center justify-between gap-3">
                     <div>
                       <span className="text-xs sm:text-sm font-bold text-white block">
                         {item.name}
@@ -2016,7 +2016,7 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
                   <span>Event Successfully Concluded & Archived</span>
                 </div>
                 <p className="text-xs text-stone-200">
-                  Thank you for producing <span className="font-bold">{currentEvent.eventName}</span> with AI Celebration & Event Management. All operational registries, VIP turnstile scans, and ledger records have been securely backed up.
+                  Thank you for producing <span className="font-bold">{currentEvent.eventName}</span> with UTSAVAM AI – Smart Event Management Platform. All operational registries, VIP turnstile scans, and ledger records have been securely backed up.
                 </p>
               </motion.div>
             )}

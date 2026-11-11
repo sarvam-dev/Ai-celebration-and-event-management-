@@ -12,7 +12,9 @@ import {
   Brain,
   MapPin,
   Users,
-  DollarSign
+  DollarSign,
+  Layers,
+  Zap
 } from 'lucide-react';
 import { useEvent } from '../context/EventContext';
 import { SHARED_SCREENS } from '../constants/screens';
@@ -113,10 +115,14 @@ export const SwipeHubScreen: React.FC<SwipeHubScreenProps> = ({
       {/* Top Global Utility Bar */}
       <div className="sticky top-0 z-40 bg-[#16110E]/95 backdrop-blur-md border-b border-[#2E241E] px-4 py-2 flex items-center justify-between gap-3 shadow-md">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#D96B27] animate-pulse" />
-            <span className="font-mono text-xs font-bold text-stone-200 uppercase tracking-wider">
-              Event Studio
+          <div className="flex items-center gap-2">
+            <img
+              src="/assets/aistudio/utsavam_circle_logo.png"
+              alt="Utsavam AI Logo"
+              className="w-6 h-6 rounded-full object-contain"
+            />
+            <span className="font-bold text-xs text-stone-100 tracking-wider">
+              UTSAVAM AI
             </span>
           </div>
 
@@ -130,7 +136,31 @@ export const SwipeHubScreen: React.FC<SwipeHubScreenProps> = ({
         </div>
 
         {/* Global Action Chips */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <button
+            onClick={() => {
+              setActiveScreenIndex(2);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="px-2.5 py-1.5 rounded-lg bg-[#1D1713] hover:bg-[#281F1A] border border-[#3A2D24] text-stone-300 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Open 2D Floor Plan & Seating Studio"
+          >
+            <Layers className="w-3.5 h-3.5 text-[#D96B27]" />
+            <span className="hidden lg:inline">Floor Plan</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveScreenIndex(4);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="px-2.5 py-1.5 rounded-lg bg-[#1D1713] hover:bg-[#281F1A] border border-[#3A2D24] text-stone-300 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Open Live Run-of-Show & Show Clock"
+          >
+            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden lg:inline">Run of Show</span>
+          </button>
+
           <button
             onClick={() => setShowSelfChecks(true)}
             className="px-2.5 py-1.5 rounded-lg bg-[#1D1713] hover:bg-[#281F1A] border border-[#3A2D24] text-stone-300 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"

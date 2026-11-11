@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { AuthUser } from '../types';
 
+import { cloudLogin, cloudRegister, cloudGetProfile } from '../utils/cloudStorage';
+
 interface SignScreenProps {
   onContinue: (user?: AuthUser) => void;
   onBackToSplash?: () => void;
@@ -43,27 +45,19 @@ export const SignScreen: React.FC<SignScreenProps> = ({
   const [showGoogleModal, setShowGoogleModal] = useState(false);
   const [customGoogleEmail, setCustomGoogleEmail] = useState('');
   const [isEnteringCustomGoogle, setIsEnteringCustomGoogle] = useState(false);
+  const [cloudStatus, setCloudStatus] = useState<string>('Connected to Cloud Storage');
 
-  // Pre-seed local storage registered accounts
+  // Check existing cloud session on mount
   useEffect(() => {
-    const existing = localStorage.getItem('ai_celebration_accounts');
-    if (!existing) {
-      const defaultAccounts = [
-        {
-          name: 'Director Quantrom',
-          email: 'quantromxx@gmail.com',
-          password: 'celebration2026',
-          role: 'Producer',
-        },
-        {
-          name: 'Alex Rivera',
-          email: 'producer@celebration.ai',
-          password: 'celebration2026',
-          role: 'Producer',
-        },
-      ];
-      localStorage.setItem('ai_celebration_accounts', JSON.stringify(defaultAccounts));
-    }
+    let isMounted = true;
+    cloudGetProfile().then((res) => {
+      if (isMounted && res.success && res.user) {
+        setCloudStatus(`Active Cloud Session: ${res.user.email}`);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Form Validation
@@ -97,9 +91,6 @@ export const SignScreen: React.FC<SignScreenProps> = ({
 
   // Direct authentication & advancement to Event Setup
   const handleAuthSuccess = (user: AuthUser) => {
-    if (rememberMe) {
-      localStorage.setItem('ai_celebration_current_user', JSON.stringify(user));
-    }
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
@@ -107,42 +98,35 @@ export const SignScreen: React.FC<SignScreenProps> = ({
     }, 350);
   };
 
-  // Form submit handler
-  const handleFormSubmit = (e: React.FormEvent) => {
+  // Real Cloud Authentication Form submit handler
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm() || isSubmitting) return;
 
-    if (tabMode === 'signup') {
-      try {
-        const accounts = JSON.parse(localStorage.getItem('ai_celebration_accounts') || '[]');
-        const exists = accounts.some((acc: any) => acc.email.toLowerCase() === email.toLowerCase());
-        if (exists) {
-          setErrorMessage('An account with this email already exists. Please sign in instead.');
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      if (tabMode === 'signup') {
+        const res = await cloudRegister(name, email, password, role);
+        if (!res.success || !res.user) {
+          setErrorMessage(res.error || 'Failed to create cloud account.');
+          setIsSubmitting(false);
           return;
         }
-        accounts.push({ name, email, password, role });
-        localStorage.setItem('ai_celebration_accounts', JSON.stringify(accounts));
-      } catch {}
-
-      const newUser: AuthUser = {
-        name: name.trim(),
-        email: email.trim(),
-        role,
-        provider: 'email',
-        token: `TOKEN-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        signedInAt: new Date().toISOString(),
-      };
-      handleAuthSuccess(newUser);
-    } else {
-      const authUser: AuthUser = {
-        name: name || email.split('@')[0],
-        email: email.trim(),
-        role,
-        provider: 'email',
-        token: `TOKEN-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        signedInAt: new Date().toISOString(),
-      };
-      handleAuthSuccess(authUser);
+        handleAuthSuccess(res.user);
+      } else {
+        const res = await cloudLogin(email, password);
+        if (!res.success || !res.user) {
+          setErrorMessage(res.error || 'Invalid credentials in Cloud Storage.');
+          setIsSubmitting(false);
+          return;
+        }
+        handleAuthSuccess(res.user);
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Unable to communicate with Cloud Storage.');
+      setIsSubmitting(false);
     }
   };
 
@@ -175,17 +159,17 @@ export const SignScreen: React.FC<SignScreenProps> = ({
       <header className="relative z-20 w-full max-w-5xl mx-auto flex items-center justify-between pb-4 border-b border-[#2A221D]">
         {/* Brand Lockup with the uploaded original Gemini logo */}
         <div className="flex items-center gap-3">
-          <div className="relative w-10 h-10 rounded-xl bg-[#1C1714] border border-[#D96B27]/30 flex items-center justify-center p-1 shadow-md shadow-black/40">
+          <div className="relative w-10 h-10 rounded-full bg-[#1C1714] border border-[#D96B27]/40 flex items-center justify-center p-0.5 shadow-md shadow-black/40 overflow-hidden">
             <img
-              src="/assets/aistudio/IMG_5a0d88a6-87e9-4a7b-a776-fc739159b4b6_10c628f5.png"
-              alt="Gemini Logo"
-              className="w-7 h-7 object-contain"
+              src="/assets/aistudio/utsavam_circle_logo.png"
+              alt="Utsavam AI Logo"
+              className="w-full h-full rounded-full object-contain"
             />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-sm sm:text-base tracking-tight text-white">
-                AI Celebration & Event Management
+                Utsavam AI • Event Studio
               </span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#D96B27]/20 text-[#FF7A3D] border border-[#D96B27]/40">
                 PRO CONSOLE
@@ -222,13 +206,13 @@ export const SignScreen: React.FC<SignScreenProps> = ({
           <div className="bg-[#181310]/95 border border-[#2E241E] rounded-3xl p-6 sm:p-7 shadow-2xl shadow-black/80 backdrop-blur-xl">
             {/* Header Badge */}
             <div className="text-center mb-5">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1C1714] to-[#251D18] border border-[#D96B27]/30 shadow-xl shadow-[#D96B27]/10 mb-3 p-2 relative group">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[#1C1714] to-[#251D18] border border-[#D96B27]/40 shadow-xl shadow-[#D96B27]/25 mb-3 p-1 relative group overflow-hidden">
                 <img
-                  src="/assets/aistudio/IMG_5a0d88a6-87e9-4a7b-a776-fc739159b4b6_10c628f5.png"
-                  alt="Original Gemini Logo"
-                  className="w-10 h-10 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)]"
+                  src="/assets/aistudio/utsavam_circle_logo.png"
+                  alt="Utsavam AI Logo"
+                  className="w-full h-full rounded-full object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)]"
                 />
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#EA580C] border border-[#181310] flex items-center justify-center">
+                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#EA580C] border border-[#181310] flex items-center justify-center">
                   <Sparkles className="w-2 h-2 text-white" />
                 </div>
               </div>
@@ -236,9 +220,15 @@ export const SignScreen: React.FC<SignScreenProps> = ({
               <h1 className="text-2xl font-bold tracking-tight text-white">
                 {tabMode === 'signin' ? 'Sign In to Event Studio' : 'Create Producer Account'}
               </h1>
-              <p className="text-xs text-stone-400 mt-1">
+              <p className="text-xs text-stone-400 mt-1 mb-2">
                 Enter your credentials or continue with Google to access event setup
               </p>
+              <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-[#120E0C] border border-[#2E241E] text-[11px] text-stone-300">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="font-mono text-emerald-300 font-semibold">Real Cloud Storage Active</span>
+                <span className="text-stone-500">•</span>
+                <span className="text-stone-400">PBKDF2 SHA-256</span>
+              </div>
             </div>
 
             {/* Error Message Alert */}
@@ -561,7 +551,7 @@ export const SignScreen: React.FC<SignScreenProps> = ({
                 </svg>
                 <h3 className="text-lg font-bold text-stone-900">Choose Google account</h3>
                 <p className="text-xs text-stone-500 mt-0.5">
-                  to continue to AI Celebration & Event Management
+                  to continue to UTSAVAM AI Event Studio
                 </p>
               </div>
 
@@ -643,7 +633,7 @@ export const SignScreen: React.FC<SignScreenProps> = ({
       {/* Footer Info */}
       <footer className="relative z-20 w-full max-w-5xl mx-auto pt-3 text-center border-t border-[#2A221D]/60">
         <p className="text-[11px] text-stone-500">
-          AI Celebration & Event Management • Verified Console Access • Ready for Event Setup
+          UTSAVAM AI – Smart Event Management Platform • Verified Console Access • Ready for Event Setup
         </p>
       </footer>
     </div>

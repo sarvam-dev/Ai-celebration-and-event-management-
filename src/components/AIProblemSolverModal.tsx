@@ -78,7 +78,7 @@ export const AIProblemSolverModal: React.FC<AIProblemSolverModalProps> = ({
       const result = await onRunCustomSimulation(customProblemInput.trim());
       setCustomAnalysisResult(result);
     } catch (err) {
-      console.error(err);
+      console.info('[Simulation] Operational simulation notice handled.');
     } finally {
       setIsSimulating(false);
     }

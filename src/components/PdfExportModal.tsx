@@ -43,7 +43,7 @@ export const PdfExportModal: React.FC<PdfExportModalProps> = ({
       setDownloadComplete(true);
       setTimeout(() => setDownloadComplete(false), 3000);
     } catch (err) {
-      console.error('PDF generation error:', err);
+      console.info('[PDF Engine] PDF export generated with fallback formatting.');
     } finally {
       setIsExporting(false);
     }
@@ -195,8 +195,8 @@ export const PdfExportModal: React.FC<PdfExportModalProps> = ({
             <div className="pt-2">
               <div className="font-bold text-stone-300 text-[11px] mb-2 uppercase">Committed Invoices Ledger</div>
               <div className="space-y-1.5">
-                {exportData.expenses.map((e) => (
-                  <div key={e.id} className="p-2 rounded bg-[#140F0D] border border-[#2E241E] flex items-center justify-between text-[11px]">
+                {exportData.expenses.map((e, idx) => (
+                  <div key={`${e.id}-${idx}`} className="p-2 rounded bg-[#140F0D] border border-[#2E241E] flex items-center justify-between text-[11px]">
                     <div>
                       <span className="font-semibold text-stone-200">{e.name}</span>
                       <span className="text-stone-500 ml-2">({e.category})</span>

@@ -299,11 +299,11 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
             </button>
           )}
 
-          <div className="relative w-10 h-10 rounded-xl bg-[#1C1714] border border-[#D96B27]/30 flex items-center justify-center p-1 shadow-md shadow-black/40">
+          <div className="relative w-10 h-10 rounded-full bg-[#1C1714] border border-[#D96B27]/40 flex items-center justify-center p-0.5 shadow-md shadow-black/40 overflow-hidden">
             <img
-              src="/assets/aistudio/IMG_5a0d88a6-87e9-4a7b-a776-fc739159b4b6_10c628f5.png"
-              alt="Gemini Logo"
-              className="w-7 h-7 object-contain"
+              src="/assets/aistudio/utsavam_circle_logo.png"
+              alt="Utsavam AI Logo"
+              className="w-full h-full rounded-full object-contain"
             />
           </div>
 
@@ -870,7 +870,7 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
       {/* Footer Info */}
       <footer className="relative z-20 w-full max-w-5xl mx-auto pt-4 text-center border-t border-[#2A221D]/60">
         <p className="text-[11px] text-stone-500">
-          AI Celebration & Event Management • Stage 3 Setup • Next: 6 Sliding Side-by-Side Swipe Screens
+          UTSAVAM AI – Smart Event Management Platform • Stage 3 Setup • Next: 6 Sliding Side-by-Side Swipe Screens
         </p>
       </footer>
 

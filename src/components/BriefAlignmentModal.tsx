@@ -92,6 +92,19 @@ export const BriefAlignmentModal: React.FC<BriefAlignmentModalProps> = ({ isOpen
         'Server-side Gemini proxy routes protect API keys without exposing secrets to client bundle.',
       ],
     },
+    {
+      title: '6. Real Cloud Storage & Google Search Grounding',
+      icon: ShieldCheck,
+      color: 'text-emerald-400',
+      status: 'Live on Google Cloud Run',
+      summary: 'Replaced browser localStorage with server-side persistent cloud storage and real web search grounding.',
+      points: [
+        'Real cloud persistence (/api/cloud/storage) replaces browser localStorage for accounts and event state.',
+        'PBKDF2 SHA-256 cryptographic password hashing (10,000 iterations, 16-byte random salt) prevents plaintext credential exposure.',
+        'HTTP security headers: X-Content-Type-Options: nosniff, X-Frame-Options: SAMEORIGIN, and XSS Protection.',
+        'Google Search Grounded venue queries with 12s timeout, webSearchQueries extraction, and live booking citations.',
+      ],
+    },
   ];
 
   return (

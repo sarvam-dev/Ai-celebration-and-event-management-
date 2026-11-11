@@ -292,9 +292,9 @@ export const SmartBudgetScreen: React.FC = () => {
 
           {/* Expenses Table */}
           <div className="space-y-2 pt-2">
-            {expenses.map((expense) => (
+            {expenses.map((expense, idx) => (
               <div
-                key={expense.id}
+                key={`${expense.id}-${idx}`}
                 className="p-3 rounded-lg bg-[#140F0D] border border-[#2E241E] flex items-center justify-between gap-3 text-xs"
               >
                 <div className="flex items-center gap-3">

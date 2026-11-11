@@ -46,7 +46,7 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
 }) => {
   // Event Name
   const [eventName, setEventName] = useState(
-    initialData?.eventName || 'Royal Heritage Grand Wedding Gala'
+    initialData?.eventName || ''
   );
 
   // Event Type
@@ -56,19 +56,19 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
 
   // Number of guests
   const [guestCount, setGuestCount] = useState(
-    initialData?.guestCount || '450'
+    initialData?.guestCount || ''
   );
 
   // Place / Venue
   const [venueName, setVenueName] = useState(
-    initialData?.venueName || 'The Grand Amber Palace - Crystal Ballroom'
+    initialData?.venueName || ''
   );
-  const [venueCity, setVenueCity] = useState('Metropolis Central');
+  const [venueCity, setVenueCity] = useState(initialData?.venueCity || '');
   const [venueLayout, setVenueLayout] = useState<'Indoor Ballroom' | 'Outdoor Garden' | 'Hybrid Staging'>('Indoor Ballroom');
 
   // Date & Time
   const [startDate, setStartDate] = useState(
-    initialData?.startDate || '2026-11-20'
+    initialData?.startDate || ''
   );
   const [startTime, setStartTime] = useState(
     initialData?.startTime || '18:00'
@@ -77,6 +77,7 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
   // Multi-Day Itinerary Synchronization helper
   const computeOffsetDate = (baseStr: string, offsetDays: number): string => {
     try {
+      if (!baseStr) return '';
       const parts = baseStr.split('-');
       if (parts.length === 3) {
         const year = parseInt(parts[0], 10);
@@ -101,12 +102,12 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
 
   // Honoree / Host
   const [honoreeOrHost, setHonoreeOrHost] = useState(
-    initialData?.honoreeOrHost || 'Evelyn & Julian Vance'
+    initialData?.honoreeOrHost || ''
   );
 
   // Atmosphere / Theme Palette
   const [themeStyle, setThemeStyle] = useState(
-    initialData?.themeStyle || 'Claude Terracotta & Royal Gold'
+    initialData?.themeStyle || 'Terracotta & Royal Gold'
   );
 
   // Production Level Tier & Total Budget
@@ -114,7 +115,7 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
     initialData?.budgetTier || 'Grand Celebration'
   );
   const [totalBudget, setTotalBudget] = useState<number>(
-    initialData?.totalBudget || 65000
+    initialData?.totalBudget || 0
   );
 
   // 6 Swipe Screen Module Activations matching the actual tabs
@@ -140,26 +141,18 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
       setValidationError('Please enter a valid event celebration name');
       return;
     }
-    if (!guestCount.trim() || Number(guestCount) <= 0) {
-      setValidationError('Please specify a positive guest attendance capacity');
-      return;
-    }
-    if (totalBudget < 1000) {
-      setValidationError('Total budget must be at least $1,000 USD');
-      return;
-    }
 
     setValidationError(null);
     const finalData: EventSetupData = {
-      eventName: eventName.trim() || 'Royal Heritage Grand Wedding Gala',
+      eventName: eventName.trim(),
       eventType,
-      venueName: venueName.trim() || 'The Grand Amber Palace - Crystal Ballroom',
-      venueCity: venueCity.trim() || 'Metropolis Central',
-      guestCount: guestCount || '450',
-      totalBudget: Number(totalBudget) || 65000,
-      startDate,
-      startTime,
-      honoreeOrHost: honoreeOrHost.trim() || 'Evelyn & Julian Vance',
+      venueName: venueName.trim() || 'Venue TBD',
+      venueCity: venueCity.trim() || 'Jaipur',
+      guestCount: guestCount.trim() || '150',
+      totalBudget: Number(totalBudget) > 0 ? Number(totalBudget) : 25000,
+      startDate: startDate || new Date().toISOString().split('T')[0],
+      startTime: startTime || '18:00',
+      honoreeOrHost: honoreeOrHost.trim(),
       themeStyle,
       budgetTier,
       multiDaySchedule,
@@ -422,7 +415,7 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
                     required
                     value={eventName}
                     onChange={(e) => setEventName(e.target.value)}
-                    placeholder="e.g. Royal Heritage Grand Wedding Gala"
+                    placeholder="e.g. Royal Wedding Reception, Leadership Summit..."
                     className="w-full pl-10 pr-4 py-2.5 bg-[#100D0B] border border-[#2A221C] rounded-xl text-sm text-white placeholder:text-stone-600 focus:outline-none focus:border-[#D96B27] focus:ring-1 focus:ring-[#D96B27] transition-all font-semibold"
                   />
                 </div>
@@ -437,7 +430,7 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
                   type="text"
                   value={honoreeOrHost}
                   onChange={(e) => setHonoreeOrHost(e.target.value)}
-                  placeholder="e.g. Evelyn & Julian Vance"
+                  placeholder="e.g. Host, Couple or Celebrant names"
                   className="w-full px-4 py-2.5 bg-[#100D0B] border border-[#2A221C] rounded-xl text-xs sm:text-sm text-white placeholder:text-stone-600 focus:outline-none focus:border-[#D96B27] transition-all"
                 />
               </div>
@@ -478,7 +471,7 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
                     required
                     value={venueName}
                     onChange={(e) => setVenueName(e.target.value)}
-                    placeholder="e.g. The Grand Amber Palace - Crystal Ballroom"
+                    placeholder="e.g. Grand Ballroom, Palace Garden, or Hotel"
                     className="w-full pl-10 pr-4 py-2.5 bg-[#100D0B] border border-[#2A221C] rounded-xl text-xs sm:text-sm text-white placeholder:text-stone-600 focus:outline-none focus:border-[#D96B27] transition-all"
                   />
                 </div>
@@ -495,7 +488,7 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
                     type="text"
                     value={venueCity}
                     onChange={(e) => setVenueCity(e.target.value)}
-                    placeholder="e.g. Metropolis Central"
+                    placeholder="e.g. Jaipur, Delhi, Mumbai, London..."
                     className="w-full pl-10 pr-4 py-2.5 bg-[#100D0B] border border-[#2A221C] rounded-xl text-xs sm:text-sm text-white placeholder:text-stone-600 focus:outline-none focus:border-[#D96B27] transition-all"
                   />
                 </div>
@@ -517,7 +510,7 @@ export const EventSetupScreen: React.FC<EventSetupScreenProps> = ({
                     required
                     value={guestCount}
                     onChange={(e) => setGuestCount(e.target.value)}
-                    placeholder="e.g. 450"
+                    placeholder="e.g. 250"
                     className="w-full pl-10 pr-4 py-2.5 bg-[#100D0B] border border-[#2A221C] rounded-xl text-xs sm:text-sm text-white placeholder:text-stone-600 focus:outline-none focus:border-[#D96B27] transition-all font-mono"
                   />
                 </div>

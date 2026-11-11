@@ -31,10 +31,10 @@ export const SignScreen: React.FC<SignScreenProps> = ({
   const [tabMode, setTabMode] = useState<'signin' | 'signup'>('signin');
   
   // Form fields
-  const [name, setName] = useState('Director Quantrom');
-  const [email, setEmail] = useState('quantromxx@gmail.com');
-  const [password, setPassword] = useState('celebration2026');
-  const [confirmPassword, setConfirmPassword] = useState('celebration2026');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<'Producer' | 'AV Director' | 'Host' | 'VIP Coordinator'>('Producer');
   const [rememberMe, setRememberMe] = useState(true);
@@ -66,7 +66,7 @@ export const SignScreen: React.FC<SignScreenProps> = ({
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     
     if (!emailRegex.test(email.trim())) {
-      setErrorMessage('Please enter a valid email address (e.g. quantromxx@gmail.com)');
+      setErrorMessage('Please enter a valid email address (e.g. director@event.com)');
       return false;
     }
 
@@ -474,47 +474,25 @@ export const SignScreen: React.FC<SignScreenProps> = ({
               </div>
             </form>
 
-            {/* Quick Demo Shortcuts */}
-            <div className="mt-5 pt-4 border-t border-[#2A221D]">
-              <span className="block text-[11px] font-mono text-stone-500 uppercase tracking-wider text-center mb-2">
-                Quick One-Tap Test Sign In
-              </span>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleAuthSuccess({
-                      name: 'Director Quantrom',
-                      email: 'quantromxx@gmail.com',
-                      role: 'Producer',
-                      provider: 'email',
-                      token: 'DEMO-PRODUCER-TOKEN',
-                      signedInAt: new Date().toISOString(),
-                    });
-                  }}
-                  className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#120E0C] border border-[#2E241E] hover:border-[#D96B27] text-xs text-stone-300 hover:text-white transition-all active:scale-95"
-                >
-                  <Zap className="w-3.5 h-3.5 text-[#FF7A3D]" />
-                  <span>Lead Producer</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleAuthSuccess({
-                      name: 'Tech Lead Alex',
-                      email: 'av.lead@celebration.ai',
-                      role: 'AV Director',
-                      provider: 'email',
-                      token: 'DEMO-AV-TOKEN',
-                      signedInAt: new Date().toISOString(),
-                    });
-                  }}
-                  className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#120E0C] border border-[#2E241E] hover:border-[#D96B27] text-xs text-stone-300 hover:text-white transition-all active:scale-95"
-                >
-                  <Building2 className="w-3.5 h-3.5 text-[#38BDF8]" />
-                  <span>AV Tech Lead</span>
-                </button>
-              </div>
+            {/* Guest / Direct Entry Option */}
+            <div className="mt-5 pt-4 border-t border-[#2A221D] text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  handleAuthSuccess({
+                    name: 'Event Organizer',
+                    email: 'organizer@utsavam.ai',
+                    role: 'Producer',
+                    provider: 'email',
+                    token: 'GUEST-SESSION-' + Date.now(),
+                    signedInAt: new Date().toISOString(),
+                  });
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-[#120E0C] border border-[#2E241E] hover:border-[#D96B27] text-xs text-stone-300 hover:text-white transition-all active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Zap className="w-3.5 h-3.5 text-[#FF7A3D]" />
+                <span>Continue as Guest Organizer</span>
+              </button>
             </div>
           </div>
         </motion.div>

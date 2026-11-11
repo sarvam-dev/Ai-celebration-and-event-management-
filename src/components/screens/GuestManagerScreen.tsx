@@ -359,6 +359,13 @@ export const GuestManagerScreen: React.FC = () => {
 
           {/* Guest Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-2">
+            {filteredGuests.length === 0 && (
+              <div className="col-span-full py-12 text-center text-stone-500 bg-[#140F0D] rounded-xl border border-dashed border-[#2E241E]">
+                <Users className="w-8 h-8 mx-auto mb-2 text-stone-600" />
+                <p className="text-sm font-medium text-stone-400">No guests registered yet</p>
+                <p className="text-xs text-stone-500 mt-1">Click "+ Add Guest" above to begin building your attendee roster.</p>
+              </div>
+            )}
             {filteredGuests.map((guest) => {
               const isSophia = guest.name.includes('Sophia');
               return (

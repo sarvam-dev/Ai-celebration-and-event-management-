@@ -43,7 +43,7 @@ export const AiConciergeScreen: React.FC<{ isActive?: boolean }> = ({ isActive =
     {
       id: 'msg-init-1',
       sender: 'assistant',
-      text: `Welcome to the Event Studio Autonomous Concierge for **${eventData.eventName}**. I am grounded strictly in live system state: **${eventData.guestCount} guests**, **$${totalBudget.toLocaleString()} total budget**, **$${remainingReserve.toLocaleString()} remaining reserve**, and primary venue **${selectedVenue?.name || eventData.venueName}**. Ask me any multi-day timeline, dietary, budget, or staff shift question.`,
+      text: `Welcome to the Event Studio Autonomous Concierge for **${eventData.eventName || 'your celebration'}**. I am grounded strictly in live system state: **${eventData.guestCount || 0} guests**, **$${totalBudget.toLocaleString()} total budget**, **$${remainingReserve.toLocaleString()} remaining reserve**, and primary venue **${selectedVenue?.name || eventData.venueName || 'Venue TBD'}**. Ask me any multi-day timeline, dietary, budget, or staff shift question.`,
       timestamp: '12:00',
       dayTag: 'All Days',
       modelSource: 'Gemini 3.8 Flash',
@@ -62,9 +62,9 @@ export const AiConciergeScreen: React.FC<{ isActive?: boolean }> = ({ isActive =
   // Quick Questions derived dynamically from live state
   const quickQuestions = [
     `What is our remaining contingency reserve after all committed expenses?`,
-    `Who is Sophia Dubois seated with and what is her dietary protocol?`,
+    `Are all dietary restrictions and VIP seating requirements accounted for?`,
     `Are there any active staff fatigue warnings or shifts exceeding 12 hours?`,
-    `What is the timeline of events for Day 2 (${eventData.eventName})?`,
+    `What is the timeline of events for ${eventData.eventName || 'our celebration'}?`,
   ];
 
   // Scroll ONLY the internal container when new message arrives, NEVER the whole window

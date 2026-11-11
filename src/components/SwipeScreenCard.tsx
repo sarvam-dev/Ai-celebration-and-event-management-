@@ -83,16 +83,16 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
 
   // Fallback defaults if eventData is empty
   const currentEvent: EventSetupData = eventData || {
-    eventName: 'Royal Heritage Grand Wedding Gala',
+    eventName: 'Your Celebration Event',
     eventType: 'Wedding',
-    venueName: 'The Grand Amber Palace - Crystal Ballroom',
-    venueCity: 'Metropolis Central',
-    guestCount: '450',
-    totalBudget: 65000,
-    startDate: '2026-11-20',
+    venueName: 'Venue Pending Selection',
+    venueCity: 'Selected Location',
+    guestCount: '150',
+    totalBudget: 25000,
+    startDate: new Date().toISOString().split('T')[0],
     startTime: '18:00',
-    honoreeOrHost: 'Evelyn & Julian Vance',
-    themeStyle: 'Claude Terracotta & Royal Gold',
+    honoreeOrHost: 'Event Host',
+    themeStyle: 'Terracotta & Royal Gold',
     budgetTier: 'Grand Celebration',
     enabledModules: {
       dashboardChecklist: true,
@@ -104,9 +104,9 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
     },
   };
 
-  const totalBudgetNum = Number(currentEvent.totalBudget) || 65000;
-  const guestCountNum = Number(currentEvent.guestCount) || 450;
-  const venueLocation = currentEvent.venueCity || 'Metropolis Central';
+  const totalBudgetNum = Number(currentEvent.totalBudget) || 25000;
+  const guestCountNum = Number(currentEvent.guestCount) || 150;
+  const venueLocation = currentEvent.venueCity || 'Selected Location';
 
   // Screen-specific scenario references
   const screen1Scenario = scenarios.find((s) => s.screenTarget === 1);
@@ -296,16 +296,16 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
   const [newGuestDiet, setNewGuestDiet] = useState('Standard');
   const [newGuestTier, setNewGuestTier] = useState<'VIP' | 'Regular' | 'Honoree Family'>('VIP');
 
-  const initialGuests = [
-    { id: '1', name: 'Lady Genevieve Sterling', rsvp: 'Attending', tier: 'VIP Gold', table: 'Table 01 - Diamond', diet: 'Gluten-Free', checkedIn: true, phone: '+1 (555) 234-8901' },
-    { id: '2', name: 'Dr. Marcus Vance & Guest', rsvp: 'Attending', tier: 'Honoree Family', table: 'Table 01 - Diamond', diet: 'Standard', checkedIn: true, phone: '+1 (555) 789-1234' },
-    { id: '3', name: 'Ambassador Tariq Al-Mansoor', rsvp: 'Attending', tier: 'Dignitary', table: 'Table 02 - Emerald', diet: 'Halal', checkedIn: false, phone: '+1 (555) 456-7890' },
-    { id: '4', name: 'Elena Rostova (Executive Director)', rsvp: 'Attending', tier: 'VIP Gold', table: 'Table 03 - Ruby', diet: 'Vegan', checkedIn: true, phone: '+1 (555) 321-6549' },
-    { id: '5', name: 'Sir Kenneth Montgomery', rsvp: 'Pending', tier: 'Patron', table: 'Table 04 - Sapphire', diet: 'Standard', checkedIn: false, phone: '+1 (555) 654-9870' },
-    { id: '6', name: 'Cassandra Blake & Party of 4', rsvp: 'Attending', tier: 'VIP Platinum', table: 'Table 05 - Amber', diet: 'Vegetarian', checkedIn: true, phone: '+1 (555) 890-4321' },
-    { id: '7', name: 'Arthur Pendelton', rsvp: 'Declined', tier: 'Regular', table: 'Unassigned', diet: 'None', checkedIn: false, phone: '+1 (555) 901-2345' },
-    { id: '8', name: 'Sophia & Liam Dubois', rsvp: 'Pending', tier: 'Honoree Family', table: 'Table 02 - Emerald', diet: 'Nut Allergy', checkedIn: false, phone: '+1 (555) 678-3456' },
-  ];
+  const initialGuests: Array<{
+    id: string;
+    name: string;
+    rsvp: string;
+    tier: string;
+    table: string;
+    diet: string;
+    checkedIn: boolean;
+    phone: string;
+  }> = [];
 
   const [guests, setGuests] = useState(initialGuests);
 
@@ -367,12 +367,13 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
     { name: 'Contingency & Reserve Fund', pct: isBudgetRebalanced ? 9 : 3, icon: ShieldCheck, desc: isBudgetRebalanced ? 'AI Fortified Safety Buffer (Matches AI Card $4,350)' : 'Emergency backup fund & unforeseen requirements' },
   ];
 
-  const initialExpenses = [
-    { id: 'e1', name: 'Grand Amber Palace Initial Deposit', category: 'Venue Rental & Staging', amount: Math.round(totalBudgetNum * 0.15), status: 'Paid' },
-    { id: 'e2', name: 'Master Chef Tasting & Food Retainer', category: 'Catering, Chef Menus & Bar', amount: Math.round(totalBudgetNum * 0.12), status: 'Paid' },
-    { id: 'e3', name: 'Terracotta Floral Arrangement Package', category: 'Decor, Florals & Ambient Design', amount: Math.round(totalBudgetNum * 0.08), status: 'Pending' },
-    { id: 'e4', name: 'Concert Sound & Intelligent Lighting Rig', category: 'Audio/Visual, Lighting & Production', amount: Math.round(totalBudgetNum * 0.06), status: 'Paid' },
-  ];
+  const initialExpenses: Array<{
+    id: string;
+    name: string;
+    category: string;
+    amount: number;
+    status: string;
+  }> = [];
 
   const [expenses, setExpenses] = useState(initialExpenses);
   const [newExpenseName, setNewExpenseName] = useState('');
@@ -420,14 +421,16 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
   // SCREEN 5: STAFF MANAGEMENT (Roster, Roles, Shifts, Radios & Shift Health)
   // =========================================================================
   const [staffFilter, setStaffFilter] = useState<'all' | 'onduty' | 'scheduled'>('all');
-  const initialStaff = [
-    { id: 's1', name: 'Marcus Sterling', role: 'Executive Event Producer', dept: 'Production', shift: '12:00 - 00:00', status: 'On Duty', channel: 'CH 1: Ops Master', phone: '+1 (555) 101-2001' },
-    { id: 's2', name: 'Chef Julian Moretti', role: 'Executive Head Chef', dept: 'Catering', shift: '14:00 - 23:00', status: 'On Duty', channel: 'CH 2: Hospitality', phone: '+1 (555) 101-2002' },
-    { id: 's3', name: 'Sarah Jenkins', role: 'Technical & AV Director', dept: 'Audio/Visual', shift: '13:00 - 23:30', status: 'On Duty', channel: 'CH 3: AV Matrix', phone: '+1 (555) 101-2003' },
-    { id: 's4', name: 'Lieutenant David Vance', role: 'Chief Security Officer', dept: 'Security', shift: '16:00 - 01:00', status: 'On Duty', channel: 'CH 4: Security', phone: '+1 (555) 101-2004' },
-    { id: 's5', name: 'Camilla Reyes', role: 'VIP Concierge & Lead Host', dept: 'Guest Services', shift: '17:00 - 23:00', status: 'On Duty', channel: 'CH 2: Hospitality', phone: '+1 (555) 101-2005' },
-    { id: 's6', name: 'Devon Brooks', role: 'Lighting & DMX Operator', dept: 'Audio/Visual', shift: '16:30 - 00:30', status: 'Scheduled', channel: 'CH 3: AV Matrix', phone: '+1 (555) 101-2006' },
-  ];
+  const initialStaff: Array<{
+    id: string;
+    name: string;
+    role: string;
+    dept: string;
+    shift: string;
+    status: string;
+    channel: string;
+    phone: string;
+  }> = [];
 
   const [staffMembers, setStaffMembers] = useState(initialStaff);
 
@@ -1212,8 +1215,15 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
 
               {/* Guest List Items */}
               <div className="divide-y divide-[#241D17]">
-                {guests
-                  .filter((g) => {
+                {guests.length === 0 ? (
+                  <div className="py-12 text-center text-stone-500 bg-[#140F0D] rounded-xl border border-dashed border-[#2E241E] my-3">
+                    <Users className="w-8 h-8 mx-auto mb-2 text-stone-600" />
+                    <p className="text-sm font-medium text-stone-400">No guests registered yet</p>
+                    <p className="text-xs text-stone-500 mt-1">Click "+ Add Guest" above to begin your attendee roster.</p>
+                  </div>
+                ) : (
+                  guests
+                    .filter((g) => {
                     const matchesFilter =
                       guestFilter === 'all' || g.rsvp.toLowerCase() === guestFilter.toLowerCase();
                     const matchesSearch =
@@ -1276,7 +1286,8 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
                         </button>
                       </div>
                     </div>
-                  ))}
+                  ))
+                )}
               </div>
             </div>
 
@@ -1533,33 +1544,41 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
 
               {/* Expense Table */}
               <div className="divide-y divide-[#241D17]">
-                {expenses.map((item, idx) => (
-                  <div key={`${item.id}-${idx}`} className="py-3 flex items-center justify-between gap-3">
-                    <div>
-                      <span className="text-xs sm:text-sm font-bold text-white block">
-                        {item.name}
-                      </span>
-                      <span className="text-[11px] text-stone-400 font-mono">
-                        {item.category}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs sm:text-sm font-mono font-bold text-white">
-                        ${item.amount.toLocaleString()}
-                      </span>
-                      <span
-                        className={`text-[10px] font-mono px-2 py-0.5 rounded ${
-                          item.status === 'Paid'
-                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                            : 'bg-amber-950 text-amber-400 border border-amber-800'
-                        }`}
-                      >
-                        {item.status}
-                      </span>
-                    </div>
+                {expenses.length === 0 ? (
+                  <div className="py-8 text-center text-stone-500 bg-[#140F0D] rounded-xl border border-dashed border-[#2E241E] my-3">
+                    <DollarSign className="w-8 h-8 mx-auto mb-2 text-stone-600" />
+                    <p className="text-sm font-medium text-stone-400">No committed expenses yet</p>
+                    <p className="text-xs text-stone-500 mt-1">Log line items using the form above.</p>
                   </div>
-                ))}
+                ) : (
+                  expenses.map((item, idx) => (
+                    <div key={`${item.id}-${idx}`} className="py-3 flex items-center justify-between gap-3">
+                      <div>
+                        <span className="text-xs sm:text-sm font-bold text-white block">
+                          {item.name}
+                        </span>
+                        <span className="text-[11px] text-stone-400 font-mono">
+                          {item.category}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs sm:text-sm font-mono font-bold text-white">
+                          ${item.amount.toLocaleString()}
+                        </span>
+                        <span
+                          className={`text-[10px] font-mono px-2 py-0.5 rounded ${
+                            item.status === 'Paid'
+                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                              : 'bg-amber-950 text-amber-400 border border-amber-800'
+                          }`}
+                        >
+                          {item.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -1669,62 +1688,70 @@ export const SwipeScreenCard: React.FC<SwipeScreenCardProps> = ({
 
               {/* Roster Cards Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {staffMembers.map((staff) => {
-                  const isFatigued = isStaffFatigued(staff);
-                  return (
-                    <div
-                      key={staff.id}
-                      className={`p-4 rounded-2xl border flex flex-col justify-between space-y-3 transition-all ${
-                        isFatigued
-                          ? 'bg-[#1C120E] border-amber-800/80 shadow-md shadow-amber-950/40'
-                          : 'bg-[#120E0C] border-[#251D18]'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-white">{staff.name}</span>
-                            <span className="text-xs font-mono px-2 py-0.5 rounded bg-[#D96B27]/15 text-[#FF7A3D] border border-[#D96B27]/30">
-                              {staff.dept}
-                            </span>
-                          </div>
-                          <span className="text-xs text-stone-300 font-medium block mt-0.5">
-                            {staff.role}
-                          </span>
-                          {isFatigued && (
-                            <div className="mt-1.5 flex items-center gap-1.5 text-xs text-amber-300 font-mono bg-amber-950/70 border border-amber-800 px-2 py-0.5 rounded-md">
-                              <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                              <span>Fatigue Alert: 12h+ continuous shift scheduled</span>
+                {staffMembers.length === 0 ? (
+                  <div className="col-span-full py-12 text-center text-stone-500 bg-[#140F0D] rounded-xl border border-dashed border-[#2E241E]">
+                    <Users className="w-8 h-8 mx-auto mb-2 text-stone-600" />
+                    <p className="text-sm font-medium text-stone-400">No operational staff rostered yet</p>
+                    <p className="text-xs text-stone-500 mt-1">Click "+ Assign Staff" above to deploy department leads and crew.</p>
+                  </div>
+                ) : (
+                  staffMembers.map((staff) => {
+                    const isFatigued = isStaffFatigued(staff);
+                    return (
+                      <div
+                        key={staff.id}
+                        className={`p-4 rounded-2xl border flex flex-col justify-between space-y-3 transition-all ${
+                          isFatigued
+                            ? 'bg-[#1C120E] border-amber-800/80 shadow-md shadow-amber-950/40'
+                            : 'bg-[#120E0C] border-[#251D18]'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-white">{staff.name}</span>
+                              <span className="text-xs font-mono px-2 py-0.5 rounded bg-[#D96B27]/15 text-[#FF7A3D] border border-[#D96B27]/30">
+                                {staff.dept}
+                              </span>
                             </div>
-                          )}
+                            <span className="text-xs text-stone-300 font-medium block mt-0.5">
+                              {staff.role}
+                            </span>
+                            {isFatigued && (
+                              <div className="mt-1.5 flex items-center gap-1.5 text-xs text-amber-300 font-mono bg-amber-950/70 border border-amber-800 px-2 py-0.5 rounded-md">
+                                <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                <span>Fatigue Alert: 12h+ continuous shift scheduled</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={() => toggleStaffStatus(staff.id)}
+                            className={`text-xs font-mono px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer ${
+                              staff.status === 'On Duty'
+                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                                : 'bg-amber-950 text-amber-400 border border-amber-800'
+                            }`}
+                          >
+                            {staff.status}
+                          </button>
                         </div>
 
-                        <button
-                          onClick={() => toggleStaffStatus(staff.id)}
-                          className={`text-xs font-mono px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer ${
-                            staff.status === 'On Duty'
-                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                              : 'bg-amber-950 text-amber-400 border border-amber-800'
-                          }`}
-                        >
-                          {staff.status}
-                        </button>
+                        <div className="flex items-center justify-between text-xs text-stone-400 pt-2 border-t border-[#201814]">
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-[#D96B27]" />
+                            <span className="font-mono text-xs">{staff.shift}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 text-stone-300 font-mono text-xs">
+                            <Radio className="w-3.5 h-3.5 text-[#FF7A3D]" />
+                            <span>{staff.channel}</span>
+                          </div>
+                        </div>
                       </div>
-
-                      <div className="flex items-center justify-between text-xs text-stone-400 pt-2 border-t border-[#201814]">
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-[#D96B27]" />
-                          <span className="font-mono text-xs">{staff.shift}</span>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 text-stone-300 font-mono text-xs">
-                          <Radio className="w-3.5 h-3.5 text-[#FF7A3D]" />
-                          <span>{staff.channel}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             </div>
 

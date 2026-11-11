@@ -157,9 +157,9 @@ export function generateEventMasterPdf(data: PdfExportData): jsPDF {
   drawSectionHeader('1. Event Specifications & Spatial Staging', `Type: ${data.eventData.eventType}`);
 
   const specs = [
-    ['Event Name', data.eventData.eventName, 'Event Type', data.eventData.eventType],
-    ['Honoree / Host', data.eventData.honoreeOrHost || 'Evelyn & Julian Vance', 'Theme / Palette', data.eventData.themeStyle || 'Terracotta & Royal Gold'],
-    ['Assigned Venue', data.selectedVenue?.name || data.eventData.venueName, 'City Location', data.eventData.venueCity || 'Metropolis Central'],
+    ['Event Name', data.eventData.eventName || 'Celebration Event', 'Event Type', data.eventData.eventType || 'Celebration'],
+    ['Honoree / Host', data.eventData.honoreeOrHost || 'Honored Host', 'Theme / Palette', data.eventData.themeStyle || 'Terracotta & Royal Gold'],
+    ['Assigned Venue', data.selectedVenue?.name || data.eventData.venueName || 'Venue TBD', 'City Location', data.eventData.venueCity || 'City'],
     ['Target Guests', `${data.totalInvited} Invited (${data.attendingCount} Confirmed)`, 'Authorized Budget', `$${data.totalBudget.toLocaleString()} USD (~$${data.costPerGuest}/guest)`],
     ['Scheduled Opening', `${data.eventData.startDate} at ${data.eventData.startTime}`, 'Multi-Day Scope', 'Day -1 to Day 3 (4 Operational Phases)'],
   ];

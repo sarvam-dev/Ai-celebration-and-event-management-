@@ -1504,23 +1504,23 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     const currentEvent = eventData || {};
     const state = liveState || {};
 
-    const eventName = currentEvent.eventName || state.eventName || 'Royal Heritage Grand Wedding Gala';
-    const eventType = currentEvent.eventType || state.eventType || 'Wedding';
-    const venueName = currentEvent.venueName || state.selectedVenueName || 'The Grand Amber Palace - Crystal Ballroom';
-    const venueCity = currentEvent.venueCity || state.city || 'Metropolis Central';
-    const venueCapacity = Number(currentEvent.venueCapacity || state.selectedVenueCapacity) || 600;
-    const guestCount = Number(currentEvent.guestCount || currentEvent.totalGuests || state.guestCount) || 450;
-    const totalBudget = Number(currentEvent.totalBudget || state.budget?.total) || 65000;
-    const committedSpent = Number(currentEvent.totalSpent ?? state.budget?.committedSpent ?? 60650);
+    const eventName = currentEvent.eventName || state.eventName || 'Celebration Event';
+    const eventType = currentEvent.eventType || state.eventType || 'Celebration';
+    const venueName = currentEvent.venueName || state.selectedVenueName || 'Selected Venue';
+    const venueCity = currentEvent.venueCity || state.city || 'City Location';
+    const venueCapacity = Number(currentEvent.venueCapacity || state.selectedVenueCapacity) || 500;
+    const guestCount = Number(currentEvent.guestCount || currentEvent.totalGuests || state.guestCount) || 0;
+    const totalBudget = Number(currentEvent.totalBudget || state.budget?.total) || 0;
+    const committedSpent = Number(currentEvent.totalSpent ?? state.budget?.committedSpent ?? 0);
     const remainingReserve = Number(currentEvent.remainingReserve ?? state.budget?.remainingReserve ?? Math.max(0, totalBudget - committedSpent));
     const contingencyBuffer = Number(state.budget?.contingencyBuffer ?? Math.round(totalBudget * 0.05));
-    const costPerGuest = Math.round(totalBudget / Math.max(1, guestCount));
-    const honoreeOrHost = currentEvent.honoreeOrHost || state.honoreeOrHost || 'Evelyn & Julian Vance';
-    const startDate = currentEvent.startDate || state.startDate || '2026-11-20';
-    const startTime = currentEvent.startTime || state.startTime || '18:00';
-    const staffCount = Number(currentEvent.staffSample?.length || state.staffCount) || 6;
-    const shiftHealthScore = Number(currentEvent.shiftHealthScore ?? 74);
-    const fatiguedStaffList = currentEvent.fatiguedStaff || ['Marcus Sterling (13h Continuous)', 'Chef Antoine Laurent (13h Continuous)'];
+    const costPerGuest = guestCount > 0 ? Math.round(totalBudget / guestCount) : 0;
+    const honoreeOrHost = currentEvent.honoreeOrHost || state.honoreeOrHost || 'Honored Host';
+    const startDate = currentEvent.startDate || state.startDate || '';
+    const startTime = currentEvent.startTime || state.startTime || '';
+    const staffCount = Number(currentEvent.staffSample?.length || state.staffCount) || 0;
+    const shiftHealthScore = Number(currentEvent.shiftHealthScore ?? 100);
+    const fatiguedStaffList = currentEvent.fatiguedStaff || [];
     const activeGates = Number(state.activeGates) || 1;
     const queueWaitTime = Math.round((guestCount * 8) / (activeGates * 60));
     const attendingCount = Number(currentEvent.attendingCount ?? state.rsvpCounts?.attending ?? 12);
@@ -1600,7 +1600,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
         `• **Shift Health**: ${shiftHealthScore}% (${fatiguedStaffList.length} fatigue notice active)\n` +
         `• **Door Queue**: ${activeGates} gate(s) active (${queueWaitTime} min wait time)\n` +
         `• **Multi-Day Itinerary**: Day -1 Rigging through Day 3 Teardown synchronized.\n\n` +
-        `You can ask me about specific VIP seating (e.g., Sophia Dubois), budget allocations, staff fatigue audits, or multi-day timeline milestones!`;
+        `You can ask me about VIP seating, dietary restrictions, budget allocations, staff duty rosters, or multi-day timeline milestones!`;
     };
 
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
@@ -1639,7 +1639,6 @@ STRICT OPERATIONAL DIRECTIVE:
   * Remaining Reserve: $${remainingReserve} USD
   * Contingency Buffer: $${contingencyBuffer} USD
   * Shift Health Score: ${shiftHealthScore}% (Fatigued staff: ${fatiguedStaffList.join(', ') || 'None'})
-  * Key VIPs: Sophia Dubois (Table 01 Hypoallergenic Sanctuary, Anaphylactic Nut Allergy, seated with Dr. Aris Thorne).
   * Staff Active Count: ${staffCount}
 - Do NOT hallucinate metrics not present in this live state.
 - Always format answers with clean, scannable markdown bullet points.
@@ -1710,7 +1709,7 @@ ${JSON.stringify(EVENT_DAYS_ITINERARY, null, 2)}`;
     const safeFallback = `**Operational State Verified:**\n\n` +
       `• **Status**: Active multi-day event operations synchronized.\n` +
       `• **Reserve & Safety**: All accounts balanced with zero negative expense entries.\n` +
-      `• **Inquiries**: You may query budget reserves, Sophia Dubois VIP dietary protocols, or staff duty rosters.`;
+      `• **Inquiries**: You may query budget reserves, guest dietary protocols, or staff duty rosters.`;
     return res.json({
       success: true,
       reply: safeFallback,

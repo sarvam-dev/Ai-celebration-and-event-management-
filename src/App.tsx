@@ -15,26 +15,18 @@ import { EventProvider } from './context/EventContext';
 export default function App() {
   const [currentStep, setCurrentStep] = useState<AppStep>('splash');
   const [splashKey, setSplashKey] = useState<number>(0);
-  const defaultUser: AuthUser = {
-    name: 'Director Quantrom',
-    email: 'quantromxx@gmail.com',
-    role: 'Producer',
-    provider: 'email',
-    token: 'auth-token-quantrom',
-    signedInAt: '12:00:00',
-  };
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(defaultUser);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [eventData, setEventData] = useState<EventSetupData>({
-    eventName: 'Royal Heritage Grand Wedding Gala',
+    eventName: '',
     eventType: 'Wedding',
-    venueName: 'The Grand Amber Palace - Crystal Ballroom',
-    venueCity: 'Metropolis Central',
-    guestCount: '450',
-    totalBudget: 65000,
-    startDate: '2026-11-20',
+    venueName: '',
+    venueCity: '',
+    guestCount: '',
+    totalBudget: 0,
+    startDate: '',
     startTime: '18:00',
-    honoreeOrHost: 'Evelyn & Julian Vance',
-    themeStyle: 'Claude Terracotta & Royal Gold',
+    honoreeOrHost: '',
+    themeStyle: 'Terracotta & Royal Gold',
     budgetTier: 'Grand Celebration',
     enabledModules: {
       dashboardChecklist: true,

@@ -35,13 +35,12 @@ interface ChecklistItem {
 }
 
 const INITIAL_CHECKLIST: ChecklistItem[] = [
-  { id: '1', title: 'Lock Primary Venue Rental Agreement & Floor Plan', category: 'Venue', done: true, priority: 'High' },
-  { id: '2', title: 'Finalize Chef Curated Menu & Dietary Accommodations', category: 'Catering', done: true, priority: 'High' },
-  { id: '3', title: 'Audio-Visual Rigging & Wireless Microphone Frequency Check', category: 'AV', done: true, priority: 'High' },
-  { id: '4', title: 'Dispatch Digital QR Invitations to VIP Roster', category: 'Guests', done: true, priority: 'Medium' },
-  { id: '5', title: 'Terracotta & Royal Gold Floral Staging Confirmation', category: 'Decor', done: false, priority: 'Medium' },
-  { id: '6', title: 'Staff Briefing & Emergency Safety SOP Walkthrough', category: 'Staff', done: false, priority: 'High' },
-  { id: '7', title: 'Verify Live Streaming 4K NDI Cameras & Redundancy', category: 'AV', done: false, priority: 'Low' },
+  { id: '1', title: 'Confirm Event Venue & Reserve Hall', category: 'Venue', done: false, priority: 'High' },
+  { id: '2', title: 'Finalize Event Menu & Catering Services', category: 'Catering', done: false, priority: 'High' },
+  { id: '3', title: 'Schedule Audio-Visual & Production Setup', category: 'AV', done: false, priority: 'Medium' },
+  { id: '4', title: 'Dispatch Digital Invitations to Guest Roster', category: 'Guests', done: false, priority: 'High' },
+  { id: '5', title: 'Confirm Event Decoration & Floral Staging', category: 'Decor', done: false, priority: 'Medium' },
+  { id: '6', title: 'Staff Briefing & Emergency Safety Walkthrough', category: 'Staff', done: false, priority: 'High' },
 ];
 
 export const DashboardScreen: React.FC = () => {
@@ -191,12 +190,12 @@ export const DashboardScreen: React.FC = () => {
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-100 tracking-tight">
-                {eventData.eventName}
+                {eventData.eventName || 'Event Dashboard'}
               </h1>
               <p className="text-sm text-stone-300 mt-1">
                 Honoree / Host:{' '}
                 <span className="font-semibold text-[#FF7A3D]">
-                  {eventData.honoreeOrHost || 'Evelyn & Julian Vance'}
+                  {eventData.honoreeOrHost || 'Host Not Specified'}
                 </span>
               </p>
             </div>

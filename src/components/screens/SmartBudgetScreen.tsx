@@ -292,6 +292,13 @@ export const SmartBudgetScreen: React.FC = () => {
 
           {/* Expenses Table */}
           <div className="space-y-2 pt-2">
+            {expenses.length === 0 && (
+              <div className="py-8 text-center text-stone-500 bg-[#140F0D] rounded-lg border border-dashed border-[#2E241E]">
+                <Coins className="w-8 h-8 mx-auto mb-2 text-stone-600" />
+                <p className="text-sm font-medium text-stone-400">No committed expenses yet</p>
+                <p className="text-xs text-stone-500 mt-1">Use the form above to log vendor deposits, venue fees, and decor costs.</p>
+              </div>
+            )}
             {expenses.map((expense, idx) => (
               <div
                 key={`${expense.id}-${idx}`}

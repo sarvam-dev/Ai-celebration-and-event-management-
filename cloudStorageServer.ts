@@ -61,52 +61,13 @@ function ensureDataDirectory(): void {
 }
 
 function initDefaultStore(): CloudStorageSchema {
-  const defaultUser1 = hashPassword('celebration2026');
-  const defaultUser2 = hashPassword('celebration2026');
-
   return {
     version: 1,
     provider: 'Google Cloud Run Persistent Store (GCP)',
     lastUpdated: new Date().toISOString(),
-    users: [
-      {
-        id: 'usr-quantrom',
-        name: 'Director Quantrom',
-        email: 'quantromxx@gmail.com',
-        passwordHash: defaultUser1.hash,
-        salt: defaultUser1.salt,
-        role: 'Producer',
-        provider: 'email',
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: 'usr-alex',
-        name: 'Alex Rivera',
-        email: 'producer@celebration.ai',
-        passwordHash: defaultUser2.hash,
-        salt: defaultUser2.salt,
-        role: 'Producer',
-        provider: 'email',
-        createdAt: new Date().toISOString(),
-      },
-    ],
+    users: [],
     sessions: [],
-    eventState: {
-      default: {
-        eventName: 'Royal Heritage Grand Wedding Gala',
-        eventType: 'Wedding',
-        venueName: 'The Grand Amber Palace - Crystal Ballroom',
-        venueCity: 'Metropolis Central',
-        guestCount: '450',
-        totalBudget: 65000,
-        startDate: '2026-11-20',
-        startTime: '18:00',
-        honoreeOrHost: 'Evelyn & Julian Vance',
-        themeStyle: 'Claude Terracotta & Royal Gold',
-        budgetTier: 'Grand Celebration',
-        lastPersistedToCloud: new Date().toISOString(),
-      },
-    },
+    eventState: {},
   };
 }
 

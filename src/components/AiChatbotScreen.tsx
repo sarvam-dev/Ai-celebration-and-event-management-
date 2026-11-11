@@ -135,7 +135,7 @@ export const AiChatbotScreen: React.FC<AiChatbotScreenProps> = ({
     {
       id: 'welcome-1',
       sender: 'assistant',
-      text: `Welcome to the **Multi-Day AI Event Concierge** for **${eventData?.eventName || 'Royal Heritage Grand Gala'}**!\n\n` +
+      text: `Welcome to the **Multi-Day AI Event Concierge** for **${eventData?.eventName || 'your celebration'}**!\n\n` +
         `I am loaded with the master itinerary across all operational days:\n` +
         `• **Day -1**: Setup, AV line tuning, 200kVA generator load tests & Fire Marshal clearance\n` +
         `• **Day 1**: Grand Opening, 17:15 Red Carpet VIP Arrivals, Welcome Address & 5-Course Plated Banquet\n` +

@@ -123,12 +123,12 @@ export const PdfExportModal: React.FC<PdfExportModalProps> = ({
                   {exportData.eventData.eventName}
                 </h1>
                 <p className="text-xs text-stone-300 mt-0.5">
-                  Honoree / Host: <strong className="text-white">{exportData.eventData.honoreeOrHost || 'Evelyn & Julian Vance'}</strong>
+                  Honoree / Host: <strong className="text-white">{exportData.eventData.honoreeOrHost || 'Honored Host'}</strong>
                 </p>
               </div>
 
               <div className="text-right text-[11px] text-stone-400 font-mono space-y-0.5">
-                <div>Producer: <span className="text-stone-200 font-bold">{exportData.currentUser?.name || 'Director Quantrom'}</span></div>
+                <div>Producer: <span className="text-stone-200 font-bold">{exportData.currentUser?.name || 'Event Producer'}</span></div>
                 <div>Venue: <span className="text-stone-200">{exportData.selectedVenue?.name || exportData.eventData.venueName}</span></div>
                 <div>Schedule: <span className="text-stone-200">{exportData.eventData.startDate} at {exportData.eventData.startTime}</span></div>
               </div>

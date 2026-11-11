@@ -214,6 +214,13 @@ export const StaffOpsScreen: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+            {staffRoster.length === 0 && (
+              <div className="col-span-full py-12 text-center text-stone-500 bg-[#140F0D] rounded-xl border border-dashed border-[#2E241E]">
+                <Users className="w-8 h-8 mx-auto mb-2 text-stone-600" />
+                <p className="text-sm font-medium text-stone-400">No operational staff rostered yet</p>
+                <p className="text-xs text-stone-500 mt-1">Click "+ Add Staff" above to assign department leads and crew.</p>
+              </div>
+            )}
             {staffRoster.map((staff) => {
               const isFatigued = isStaffFatigued(staff);
 

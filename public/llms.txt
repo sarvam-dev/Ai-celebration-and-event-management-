@@ -1,0 +1,17 @@
+# UTSAVAM AI – Smart Event Management Platform
+
+> UTSAVAM AI is an intelligent event management platform to plan, organize, and manage celebrations, weddings, corporate events, and galas end-to-end.
+
+- Canonical URL: https://utsavam-ai.onrender.com/
+- Sitemap: https://utsavam-ai.onrender.com/sitemap.xml
+- Robots Policy: https://utsavam-ai.onrender.com/robots.txt
+
+## Core Platform Capabilities
+
+- **Event Dashboard & Readiness Checklist**: Countdown telemetry, key celebration metrics, and interactive preparation milestones.
+- **Venue Search & Discovery**: City-based venue discovery, capacity matching, amenities comparison, and Google Maps integration.
+- **Guest Management & Turnstile Ingress**: RSVP tracking, VIP tiers, dietary protocol isolation, 2D spatial floor plan seating, and turnstile door scanner simulation.
+- **Smart Budget Ledger**: Category percentage allocation, AI non-destructive budget rebalancing, committed expense tracking, and contingency reserve protection.
+- **Staff Operations & Run-of-Show**: Crew shift scheduling, walkie-talkie channel assignment, fatigue alerts, and live show cue sheets.
+- **Event Controls & Contingency Planning**: Multi-day itinerary coordination, weather contingency switching, and PDF production dossier exports.
+- **Autonomous AI Event Concierge**: State-grounded multi-day operational assistant for timelines, budget reserves, dietary protocols, and logistics.

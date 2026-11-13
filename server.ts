@@ -30,7 +30,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 7860;
 
 app.use(express.json({ limit: '2mb' }));
 app.use(securityHeadersMiddleware);
@@ -45,35 +45,53 @@ app.post('/api/cloud/storage/event', handleSaveEventState);
 app.get('/api/cloud/storage/event', handleLoadEventState);
 app.get('/api/cloud/storage/status', handleGetCloudStorageStatus);
 
-// Public static assets (robots.txt, sitemap.xml, favicon.ico, logo.png)
+// Public static assets (robots.txt, sitemap.xml, llms.txt, favicon.ico, logo.png)
 app.use(express.static(path.resolve(__dirname, 'public'), {
   maxAge: '1d',
   setHeaders: (res, filePath) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
     if (filePath.endsWith('.png') || filePath.endsWith('.ico') || filePath.endsWith('.xml') || filePath.endsWith('.txt')) {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('X-Robots-Tag', 'all');
     }
   }
 }));
 
 app.get('/robots.txt', (_req: Request, res: Response) => {
-  res.type('text/plain');
+  res.type('text/plain; charset=utf-8');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.setHeader('X-Robots-Tag', 'all');
   res.sendFile(path.resolve(__dirname, 'public', 'robots.txt'));
 });
 
 app.get('/sitemap.xml', (_req: Request, res: Response) => {
-  res.type('application/xml');
+  res.type('application/xml; charset=utf-8');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.setHeader('X-Robots-Tag', 'all');
   res.sendFile(path.resolve(__dirname, 'public', 'sitemap.xml'));
 });
 
+app.get('/llms.txt', (_req: Request, res: Response) => {
+  res.type('text/plain; charset=utf-8');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.setHeader('X-Robots-Tag', 'all');
+  res.sendFile(path.resolve(__dirname, 'public', 'llms.txt'));
+});
+
 app.get('/favicon.ico', (_req: Request, res: Response) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.sendFile(path.resolve(__dirname, 'public', 'favicon.ico'));
 });
 
 // Google Search Console Site Verification HTML Route
 app.get('/googlefb8f631e6c649087.html', (_req: Request, res: Response) => {
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.setHeader('X-Robots-Tag', 'all');
   const pubPath = path.resolve(__dirname, 'public', 'googlefb8f631e6c649087.html');
   if (fs.existsSync(pubPath)) {
     return res.sendFile(pubPath);
@@ -1736,13 +1754,18 @@ async function startServer() {
     console.log(`[UTSAVAM AI] Serving compiled production bundle from ${distDir}`);
     app.use(express.static(distDir, {
       maxAge: '1h',
-      index: false
+      index: false,
+      setHeaders: (res) => {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('X-Robots-Tag', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1');
+      }
     }));
 
     app.get('*', (req: Request, res: Response) => {
       if (req.path.startsWith('/api/')) {
         return res.status(404).json({ error: 'API route not found' });
       }
+      res.setHeader('X-Robots-Tag', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1');
       res.sendFile(distIndex);
     });
   } else {
@@ -1762,8 +1785,12 @@ async function startServer() {
           if (fs.existsSync(rootIndex)) {
             let template = fs.readFileSync(rootIndex, 'utf-8');
             template = await vite.transformIndexHtml(req.originalUrl, template);
-            res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+            res.status(200).set({
+              'Content-Type': 'text/html',
+              'X-Robots-Tag': 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1'
+            }).end(template);
           } else if (hasDist) {
+            res.setHeader('X-Robots-Tag', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1');
             res.sendFile(distIndex);
           } else {
             next();
@@ -1778,6 +1805,7 @@ async function startServer() {
       if (hasDist) {
         app.use(express.static(distDir));
         app.get('*', (_req: Request, res: Response) => {
+          res.setHeader('X-Robots-Tag', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1');
           res.sendFile(distIndex);
         });
       }

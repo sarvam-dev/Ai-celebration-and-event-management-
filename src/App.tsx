@@ -12,8 +12,17 @@ import { EventSetupScreen } from './components/EventSetupScreen';
 import { SwipeHubScreen } from './components/SwipeHubScreen';
 import { EventProvider } from './context/EventContext';
 
+function isAutomatedCrawler(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /bot|crawl|spider|slurp|googlebot|google-inspectiontool|bingbot|duckduckbot|baiduspider|yandex|applebot|gptbot|oai-searchbot|chatgpt-user|claudebot|claude-web|anthropic-ai|perplexitybot|facebookexternalhit|twitterbot|linkedinbot|slackbot|discordbot|whatsapp|lighthouse/i.test(
+    navigator.userAgent
+  );
+}
+
 export default function App() {
-  const [currentStep, setCurrentStep] = useState<AppStep>('splash');
+  const [currentStep, setCurrentStep] = useState<AppStep>(() =>
+    isAutomatedCrawler() ? 'sign' : 'splash'
+  );
   const [splashKey, setSplashKey] = useState<number>(0);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [eventData, setEventData] = useState<EventSetupData>({

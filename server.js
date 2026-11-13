@@ -2,6 +2,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import path2 from "path";
+import fs2 from "fs";
 import { fileURLToPath } from "url";
 
 // cloudStorageServer.ts
@@ -29,51 +30,13 @@ function ensureDataDirectory() {
   }
 }
 function initDefaultStore() {
-  const defaultUser1 = hashPassword("celebration2026");
-  const defaultUser2 = hashPassword("celebration2026");
   return {
     version: 1,
     provider: "Google Cloud Run Persistent Store (GCP)",
     lastUpdated: (/* @__PURE__ */ new Date()).toISOString(),
-    users: [
-      {
-        id: "usr-quantrom",
-        name: "Director Quantrom",
-        email: "quantromxx@gmail.com",
-        passwordHash: defaultUser1.hash,
-        salt: defaultUser1.salt,
-        role: "Producer",
-        provider: "email",
-        createdAt: (/* @__PURE__ */ new Date()).toISOString()
-      },
-      {
-        id: "usr-alex",
-        name: "Alex Rivera",
-        email: "producer@celebration.ai",
-        passwordHash: defaultUser2.hash,
-        salt: defaultUser2.salt,
-        role: "Producer",
-        provider: "email",
-        createdAt: (/* @__PURE__ */ new Date()).toISOString()
-      }
-    ],
+    users: [],
     sessions: [],
-    eventState: {
-      default: {
-        eventName: "Royal Heritage Grand Wedding Gala",
-        eventType: "Wedding",
-        venueName: "The Grand Amber Palace - Crystal Ballroom",
-        venueCity: "Metropolis Central",
-        guestCount: "450",
-        totalBudget: 65e3,
-        startDate: "2026-11-20",
-        startTime: "18:00",
-        honoreeOrHost: "Evelyn & Julian Vance",
-        themeStyle: "Claude Terracotta & Royal Gold",
-        budgetTier: "Grand Celebration",
-        lastPersistedToCloud: (/* @__PURE__ */ new Date()).toISOString()
-      }
-    }
+    eventState: {}
   };
 }
 function loadCloudStore() {
@@ -2193,7 +2156,7 @@ dotenv.config();
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = path2.dirname(__filename);
 var app = express();
-var port = process.env.PORT ? parseInt(process.env.PORT) : 3e3;
+var port = process.env.PORT ? parseInt(process.env.PORT, 10) : 7860;
 app.use(express.json({ limit: "2mb" }));
 app.use(securityHeadersMiddleware);
 app.use(authenticateCloudToken);
@@ -2207,22 +2170,48 @@ app.get("/api/cloud/storage/status", handleGetCloudStorageStatus);
 app.use(express.static(path2.resolve(__dirname, "public"), {
   maxAge: "1d",
   setHeaders: (res, filePath) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
     if (filePath.endsWith(".png") || filePath.endsWith(".ico") || filePath.endsWith(".xml") || filePath.endsWith(".txt")) {
-      res.setHeader("Access-Control-Allow-Origin", "*");
-      res.setHeader("Cache-Control", "public, max-age=86400");
+      res.setHeader("Cache-Control", "public, max-age=3600");
+      res.setHeader("X-Robots-Tag", "all");
     }
   }
 }));
 app.get("/robots.txt", (_req, res) => {
-  res.type("text/plain");
+  res.type("text/plain; charset=utf-8");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  res.setHeader("X-Robots-Tag", "all");
   res.sendFile(path2.resolve(__dirname, "public", "robots.txt"));
 });
 app.get("/sitemap.xml", (_req, res) => {
-  res.type("application/xml");
+  res.type("application/xml; charset=utf-8");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  res.setHeader("X-Robots-Tag", "all");
   res.sendFile(path2.resolve(__dirname, "public", "sitemap.xml"));
 });
+app.get("/llms.txt", (_req, res) => {
+  res.type("text/plain; charset=utf-8");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  res.setHeader("X-Robots-Tag", "all");
+  res.sendFile(path2.resolve(__dirname, "public", "llms.txt"));
+});
 app.get("/favicon.ico", (_req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.sendFile(path2.resolve(__dirname, "public", "favicon.ico"));
+});
+app.get("/googlefb8f631e6c649087.html", (_req, res) => {
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  res.setHeader("X-Robots-Tag", "all");
+  const pubPath = path2.resolve(__dirname, "public", "googlefb8f631e6c649087.html");
+  if (fs2.existsSync(pubPath)) {
+    return res.sendFile(pubPath);
+  }
+  res.send("google-site-verification: googlefb8f631e6c649087.html");
 });
 app.get("/api/health", (req, res) => {
   res.json({
@@ -3390,23 +3379,23 @@ app.post("/api/chat", async (req, res) => {
     const activeDayScope = dayContext || selectedDay || "all";
     const currentEvent = eventData || {};
     const state = liveState || {};
-    const eventName = currentEvent.eventName || state.eventName || "Royal Heritage Grand Wedding Gala";
-    const eventType = currentEvent.eventType || state.eventType || "Wedding";
-    const venueName = currentEvent.venueName || state.selectedVenueName || "The Grand Amber Palace - Crystal Ballroom";
-    const venueCity = currentEvent.venueCity || state.city || "Metropolis Central";
-    const venueCapacity = Number(currentEvent.venueCapacity || state.selectedVenueCapacity) || 600;
-    const guestCount = Number(currentEvent.guestCount || currentEvent.totalGuests || state.guestCount) || 450;
-    const totalBudget = Number(currentEvent.totalBudget || state.budget?.total) || 65e3;
-    const committedSpent = Number(currentEvent.totalSpent ?? state.budget?.committedSpent ?? 60650);
+    const eventName = currentEvent.eventName || state.eventName || "Celebration Event";
+    const eventType = currentEvent.eventType || state.eventType || "Celebration";
+    const venueName = currentEvent.venueName || state.selectedVenueName || "Selected Venue";
+    const venueCity = currentEvent.venueCity || state.city || "City Location";
+    const venueCapacity = Number(currentEvent.venueCapacity || state.selectedVenueCapacity) || 500;
+    const guestCount = Number(currentEvent.guestCount || currentEvent.totalGuests || state.guestCount) || 0;
+    const totalBudget = Number(currentEvent.totalBudget || state.budget?.total) || 0;
+    const committedSpent = Number(currentEvent.totalSpent ?? state.budget?.committedSpent ?? 0);
     const remainingReserve = Number(currentEvent.remainingReserve ?? state.budget?.remainingReserve ?? Math.max(0, totalBudget - committedSpent));
     const contingencyBuffer = Number(state.budget?.contingencyBuffer ?? Math.round(totalBudget * 0.05));
-    const costPerGuest = Math.round(totalBudget / Math.max(1, guestCount));
-    const honoreeOrHost = currentEvent.honoreeOrHost || state.honoreeOrHost || "Evelyn & Julian Vance";
-    const startDate = currentEvent.startDate || state.startDate || "2026-11-20";
-    const startTime = currentEvent.startTime || state.startTime || "18:00";
-    const staffCount = Number(currentEvent.staffSample?.length || state.staffCount) || 6;
-    const shiftHealthScore = Number(currentEvent.shiftHealthScore ?? 74);
-    const fatiguedStaffList = currentEvent.fatiguedStaff || ["Marcus Sterling (13h Continuous)", "Chef Antoine Laurent (13h Continuous)"];
+    const costPerGuest = guestCount > 0 ? Math.round(totalBudget / guestCount) : 0;
+    const honoreeOrHost = currentEvent.honoreeOrHost || state.honoreeOrHost || "Honored Host";
+    const startDate = currentEvent.startDate || state.startDate || "";
+    const startTime = currentEvent.startTime || state.startTime || "";
+    const staffCount = Number(currentEvent.staffSample?.length || state.staffCount) || 0;
+    const shiftHealthScore = Number(currentEvent.shiftHealthScore ?? 100);
+    const fatiguedStaffList = currentEvent.fatiguedStaff || [];
     const activeGates = Number(state.activeGates) || 1;
     const queueWaitTime = Math.round(guestCount * 8 / (activeGates * 60));
     const attendingCount = Number(currentEvent.attendingCount ?? state.rsvpCounts?.attending ?? 12);
@@ -3481,7 +3470,7 @@ app.post("/api/chat", async (req, res) => {
 \u2022 **Door Queue**: ${activeGates} gate(s) active (${queueWaitTime} min wait time)
 \u2022 **Multi-Day Itinerary**: Day -1 Rigging through Day 3 Teardown synchronized.
 
-You can ask me about specific VIP seating (e.g., Sophia Dubois), budget allocations, staff fatigue audits, or multi-day timeline milestones!`;
+You can ask me about VIP seating, dietary restrictions, budget allocations, staff duty rosters, or multi-day timeline milestones!`;
     };
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) {
@@ -3514,7 +3503,6 @@ STRICT OPERATIONAL DIRECTIVE:
   * Remaining Reserve: $${remainingReserve} USD
   * Contingency Buffer: $${contingencyBuffer} USD
   * Shift Health Score: ${shiftHealthScore}% (Fatigued staff: ${fatiguedStaffList.join(", ") || "None"})
-  * Key VIPs: Sophia Dubois (Table 01 Hypoallergenic Sanctuary, Anaphylactic Nut Allergy, seated with Dr. Aris Thorne).
   * Staff Active Count: ${staffCount}
 - Do NOT hallucinate metrics not present in this live state.
 - Always format answers with clean, scannable markdown bullet points.
@@ -3578,7 +3566,7 @@ User Question: ${message.trim()}` }]
 
 \u2022 **Status**: Active multi-day event operations synchronized.
 \u2022 **Reserve & Safety**: All accounts balanced with zero negative expense entries.
-\u2022 **Inquiries**: You may query budget reserves, Sophia Dubois VIP dietary protocols, or staff duty rosters.`;
+\u2022 **Inquiries**: You may query budget reserves, guest dietary protocols, or staff duty rosters.`;
     return res.json({
       success: true,
       reply: safeFallback,
@@ -3590,22 +3578,72 @@ User Question: ${message.trim()}` }]
   }
 });
 async function startServer() {
-  const isProd = process.env.NODE_ENV === "production";
-  if (!isProd) {
-    const { createServer: createViteServer } = await import("vite");
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa"
-    });
-    app.use(vite.middlewares);
-  } else {
-    app.use(express.static(path2.resolve(__dirname, "dist")));
+  const distDir = path2.resolve(__dirname, "dist");
+  const distIndex = path2.join(distDir, "index.html");
+  const hasDist = fs2.existsSync(distIndex);
+  const isExplicitDev = process.env.VITE_DEV_SERVER === "true" || process.argv.includes("--dev");
+  const shouldUseDist = hasDist && !isExplicitDev;
+  if (shouldUseDist) {
+    console.log(`[UTSAVAM AI] Serving compiled production bundle from ${distDir}`);
+    app.use(express.static(distDir, {
+      maxAge: "1h",
+      index: false,
+      setHeaders: (res) => {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("X-Robots-Tag", "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1");
+      }
+    }));
     app.get("*", (req, res) => {
-      res.sendFile(path2.resolve(__dirname, "dist", "index.html"));
+      if (req.path.startsWith("/api/")) {
+        return res.status(404).json({ error: "API route not found" });
+      }
+      res.setHeader("X-Robots-Tag", "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1");
+      res.sendFile(distIndex);
     });
+  } else {
+    console.log("[UTSAVAM AI] Starting Vite dev server middleware");
+    try {
+      const { createServer: createViteServer } = await import("vite");
+      const vite = await createViteServer({
+        server: { middlewareMode: true, hmr: false },
+        appType: "spa"
+      });
+      app.use(vite.middlewares);
+      app.get("*", async (req, res, next) => {
+        if (req.path.startsWith("/api/")) return next();
+        try {
+          const rootIndex = path2.resolve(__dirname, "index.html");
+          if (fs2.existsSync(rootIndex)) {
+            let template = fs2.readFileSync(rootIndex, "utf-8");
+            template = await vite.transformIndexHtml(req.originalUrl, template);
+            res.status(200).set({
+              "Content-Type": "text/html",
+              "X-Robots-Tag": "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"
+            }).end(template);
+          } else if (hasDist) {
+            res.setHeader("X-Robots-Tag", "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1");
+            res.sendFile(distIndex);
+          } else {
+            next();
+          }
+        } catch (e) {
+          vite.ssrFixStacktrace(e);
+          next(e);
+        }
+      });
+    } catch (viteErr) {
+      console.warn("[UTSAVAM AI] Vite middleware initialization fallback:", viteErr);
+      if (hasDist) {
+        app.use(express.static(distDir));
+        app.get("*", (_req, res) => {
+          res.setHeader("X-Robots-Tag", "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1");
+          res.sendFile(distIndex);
+        });
+      }
+    }
   }
   app.listen(port, "0.0.0.0", () => {
-    console.log(`UTSAVAM AI Server listening on http://0.0.0.0:${port}`);
+    console.log(`UTSAVAM AI Server listening on http://0.0.0.0:${port} (mode: ${shouldUseDist ? "production-dist" : "development-vite"})`);
   });
 }
 startServer();
